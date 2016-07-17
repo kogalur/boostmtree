@@ -360,7 +360,8 @@ boostmtree <- function(x,
                          importance = "none",
                          bootstrap = bootstrap,
                          ntree = ntree,
-                         forest.wt = TRUE)##TBD TBD, use OOB forest weights?
+                         forest.wt = TRUE, ## TBD TBD, use OOB forest weights?
+                         memebership = TRUE)
 
       ## Kmax is the maximum number of terminal nodes
       Kmax <- max(rfsrc.obj$leaf.count, na.rm = TRUE)
@@ -380,7 +381,8 @@ boostmtree <- function(x,
                          mtry = mtry,
                          nodesize = nodesize,
                          importance = "none",
-                         bootstrap = bootstrap)
+                         bootstrap = bootstrap,
+                         membership = TRUE)
 
       ## save the base learner
       baselearner[[m]] <- rfsrc.obj

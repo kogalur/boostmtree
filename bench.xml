@@ -12,7 +12,7 @@
   <property name="stealth.flag" value="RF_STLTH_FLAG"/>
 
   <!-- Generic project properties -->
-  <property name="logFile" value="benchmark.log"/>
+  <property name="logFile" value="boostmtree.log"/>
 
   <!-- Static Locations -->
   <property name="qacDir" value="quality"/>
@@ -99,9 +99,9 @@ ${scriptFileExitLine}
       
       <arg line="output${sep}${logFile}"/>
     </exec>
-    <echo message="    grow.txt"/>
+    <echo message="    test.txt"/>
     <exec dir="${qacDir}" executable="diff">
-      <arg line="-w output/grow.txt benchmark/grow.txt"/>
+      <arg line="-w output/test.txt benchmark/test.txt"/>
     </exec>
 
   </target>

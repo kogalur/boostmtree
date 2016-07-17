@@ -9,9 +9,9 @@
   <!-- Generic project properties -->
   <property name="project.name" value="BOOSTMTREE Build Suite"/>
   <property name="project.version.token" value="_PROJECT_VERSION_ID_"/>
-  <property name="project.version" value="1.1.0"/>
+  <property name="project.version" value="1.1.2"/>
   <property name="project.build.token" value="_PROJECT_BUILD_ID_"/>
-  <property name="project.build" value="bld20160411"/>
+  <property name="project.build" value="bld20160717"/>
   <property name="project.pkg.name.token" value="_PROJECT_PACKAGE_NAME_"/>
   <property name="rfsrc.pkg.name.token" value="_RFSRC_PACKAGE_NAME_"/>
 
@@ -154,10 +154,18 @@
     ========================================================================
   -->
   <target name="quality" depends="prepare,source-package">
+
+    <!-- This allows us to switch between non-stealth and stealth
+         builds as the two files below has code specific tokens that need
+         to be reinitialized.  /-->
+    <delete file="${bldDir}/quality/load.R" />
+    <delete file="${bldDir}/quality/header.R" />
+
     <copy todir="${bldDir}/quality/data">
       <fileset dir="${pkgDir}/data">
         <include name="*.txt"/>
         <include name="*.csv"/>
+        <include name="*.RData"/>
       </fileset>
     </copy>
 
@@ -188,7 +196,8 @@
     </copy>
 
 
-    <replace file="${bldDir}/quality/load.R" token="_PROJECT_LIBRARY_NAME_" value="${project.pkg.name}${sharedObjectExtension}"/>
+    <replace file="${bldDir}/quality/load.R" token="${rfsrc.pkg.name.token}" value="${rfsrc.pkg.name}"/>
+
     <replace file="${bldDir}/quality/load.R" token="_PROJECT_ARCH_TYPE_" value="${Rlib}"/>
     <replace file="${bldDir}/quality/load.R" token="_PROJECT_SUPPORT_OPENMP_" value="${openMPswitch}"/>
 

@@ -24,7 +24,7 @@ if (is.null(build.path)) {
 }
 
 ## Dependency automatically loaded when package is loaded.
-library("randomForestSRC")
+library("_RFSRC_PACKAGE_NAME_")
 library("splines")
 library("nlme")
 library("parallel")

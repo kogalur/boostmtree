@@ -286,3 +286,5 @@ legend("topright", legend = c("SLTx", "DLTx", "combined"), lty = 1,
        fill = c(4, 2, 1), cex = 2.5)
 dev.off()
 
+sink(paste(output.path, "test.txt", sep=""), append = FALSE)
+sink()
