@@ -1,28 +1,21 @@
-predict.boostmtree <-
-  function(object,
-           x,
-           tm,
-           id,
-           y,
-           M,
-           importance = TRUE,
-           verbose = TRUE,
-           eps = 1e-5,
-           ...)
+predict.boostmtree <- function(object,
+                               x,
+                               tm,
+                               id,
+                               y,
+                               M,
+                               eps = 1e-5,
+                               useCVflag = FALSE,
+                               ...)
 {
-
-
   result.predict <- generic.predict.boostmtree(object = object,
-                                               x = x,
-                                               tm = tm,
-                                               id = id,
-                                               y = y,
-                                               M = M,
-                                               importance = importance,
-                                               verbose = verbose,
+                                               x,
+                                               tm,
+                                               id,
+                                               y,
+                                               M,
                                                eps = eps,
+                                               useCVflag = useCVflag,
                                                ...)
-
   return(result.predict)
-
 }

@@ -1,20 +1,26 @@
 <?xml version="1.0"?>
 
 <!-- ===================================================== -->
-<!-- BOOSTMTREE Project File        Apache Ant version 1.9.0   -->
+<!-- BOOSTMTREE Project File    Apache Ant version 1.10.0  -->
 <!-- ===================================================== -->
 
-<project name="BOOSTMTREE Build Suite" basedir="." default="serial">
+<project name="BOOSTMTREE Build Suite" basedir="." default="usage">
 
   <!-- Generic project properties -->
   <property name="project.name" value="BOOSTMTREE Build Suite"/>
   <property name="project.version.token" value="_PROJECT_VERSION_ID_"/>
-  <property name="project.version" value="1.1.2"/>
+
+  <property name="project.version" value="1.5.2"/>
   <property name="project.build.token" value="_PROJECT_BUILD_ID_"/>
-  <property name="project.build" value="bld20160717"/>
+  <property name="project.build" value="bld20250612"/>
+
   <property name="project.pkg.name.token" value="_PROJECT_PACKAGE_NAME_"/>
   <property name="rfsrc.pkg.name.token" value="_RFSRC_PACKAGE_NAME_"/>
 
+  <property name="project.pkg.name"  value="boostmtree"/>
+  <property name="rfsrc.pkg.name"  value="randomForestSRC"/>
+  <property name="logFile" value="boostmtree.log"/>
+  
   
   <property name="http.prefix.token" value="_HTTP_PREFIX_"/>
   <property name="http.prefix" value="http://"/>
@@ -47,72 +53,6 @@
 
   <!--
     ========================================================================
-      Internal Target:  Set package for Multivariate
-    ========================================================================
-  -->
-  <target name="setMltvariate">
-    <property name="project.pkg.name"  value="boostmtree"/>
-    <property name="rfsrc.pkg.name"  value="randomForestSRC"/>
-    <property name="logFile" value="boostmtree.log"/>
-
-    <property name="mltvariate.r.switch.beg.token" value="## RF_MLTVR_BEG ##" />
-    <property name="mltvariate.r.switch.end.token" value="## RF_MLTVR_END ##" />
-
-    <property name="mltvariate.switch.beg"       value="" />
-    <property name="mltvariate.switch.end"       value="" />
-
-    <property name="stealth.r.switch.beg.token" value="## RF_STLTH_BEG ##" />
-    <property name="stealth.r.switch.end.token" value="## RF_STLTH_END ##" />
-
-    <property name="stealth.switch.beg"       value="/*" />
-    <property name="stealth.switch.end"       value="*/" />
-
-    <property name="exclude.R.files"       value="exclude.stealth.R.txt" />
-    <property name="exclude.Rd.files"      value="exclude.stealth.Rd.txt" />
-
-    <property name="mltvariate.flag.token"       value="RF_MLTVR_FLAG" />    
-    <property name="mltvariate.flag"             value="TRUE" />
-              
-    <property name="stealth.flag.token"          value="RF_STLTH_FLAG" />    
-    <property name="stealth.flag"                value="FALSE" />
-
-  </target>
-
-  <!--
-    ========================================================================
-      Internal Target:  Set package for Stealth
-    ========================================================================
-  -->
-  <target name="setStealth">
-    <property name="project.pkg.name"  value="boostmtree.stealth"/>
-    <property name="rfsrc.pkg.name"  value="randomForestSRC.stealth"/>
-    <property name="logFile" value="boostmtree.log"/>
-
-    <property name="mltvariate.r.switch.beg.token" value="## RF_MLTVR_BEG ##" />
-    <property name="mltvariate.r.switch.end.token" value="## RF_MLTVR_END ##" />
-
-    <property name="mltvariate.switch.beg"       value="/*" />
-    <property name="mltvariate.switch.end"       value="*/" />
-
-    <property name="stealth.r.switch.beg.token" value="## RF_STLTH_BEG ##" />
-    <property name="stealth.r.switch.end.token" value="## RF_STLTH_END ##" />
-
-    <property name="stealth.switch.beg"       value="" />
-    <property name="stealth.switch.end"       value="" />
-
-    <property name="exclude.R.files"       value="exclude.multivariate.R.txt" />
-    <property name="exclude.Rd.files"      value="exclude.multivariate.Rd.txt" />
-
-    <property name="mltvariate.flag.token"       value="RF_MLTVR_FLAG" />    
-    <property name="mltvariate.flag"             value="FALSE" />
-              
-    <property name="stealth.flag.token"          value="RF_STLTH_FLAG" />    
-    <property name="stealth.flag"                value="TRUE" />
-              
-  </target>
-
-  <!--
-    ========================================================================
       Internal Target:  Set source tree.
     ========================================================================
   -->
@@ -140,7 +80,6 @@
     <move file="${bldDir}/bench.xml" tofile="${bldDir}/build.xml"/>
     <replace file="${bldDir}/build.xml" token="${project.version.token}" value="${project.version}"/>
     <replace file="${bldDir}/build.xml" token="${project.build.token}" value="${project.build}"/>
-    <replace file="${bldDir}/build.xml" token="${stealth.flag.token}"  value="${stealth.flag}"/>
     <replace file="${bldDir}/build.xml" token="${project.build.token}" value="${project.build}"/>
 
     <copy file="docs/build.properties" todir="${bldDir}"/>
@@ -237,17 +176,7 @@ ${scriptFileExitLine}
     <copy todir="${bldDir}/cran/${project.pkg.name}/R">
       <fileset dir="${pkgDir}/R">
         <include name="*.R"/>
-	      <excludesfile name="${exclude.R.files}"/>
       </fileset>
-
-      <filterchain>
-        <tokenfilter>
-          <replacestring from="${mltvariate.r.switch.beg.token}" to="${mltvariate.switch.beg}"/>
-          <replacestring from="${mltvariate.r.switch.end.token}" to="${mltvariate.switch.end}"/>
-          <replacestring from="${stealth.r.switch.beg.token}" to="${stealth.switch.beg}"/>
-          <replacestring from="${stealth.r.switch.end.token}" to="${stealth.switch.end}"/>
-        </tokenfilter>
-      </filterchain>
 
       <filterchain>
         <fixcrlf eol="lf"/>
@@ -278,17 +207,7 @@ ${scriptFileExitLine}
     <copy todir="${bldDir}/cran/${project.pkg.name}/man">
       <fileset dir="${pkgDir}/man">
         <include name="*.Rd"/>
-        <excludesfile name="${exclude.Rd.files}"/>
       </fileset>
-
-      <filterchain>
-        <tokenfilter>
-          <replacestring from="${mltvariate.r.switch.beg.token}" to="${mltvariate.switch.beg}"/>
-          <replacestring from="${mltvariate.r.switch.end.token}" to="${mltvariate.switch.end}"/>
-          <replacestring from="${stealth.r.switch.beg.token}" to="${stealth.switch.beg}"/>
-          <replacestring from="${stealth.r.switch.end.token}" to="${stealth.switch.end}"/>
-        </tokenfilter>
-      </filterchain>
 
       <filterchain>
         <fixcrlf eol="lf"/>
@@ -359,6 +278,8 @@ ${scriptFileExitLine}
     <copy todir="${bldDir}/cran/staged">
       <fileset dir="${pkgDir}/data">
         <include name="*.txt"/>
+        <include name="*.csv"/>
+        <include name="*.RData"/>
       </fileset>
     </copy>
 
@@ -370,7 +291,7 @@ ${scriptFileExitLine}
 
     <copy todir="${bldDir}/cran/${project.pkg.name}/data">
       <fileset dir="${bldDir}/cran/staged">
-        <include name="*.rda"/>
+        <include name="*.RData"/>
       </fileset>
     </copy>
 
@@ -395,12 +316,15 @@ ${scriptFileExitLine}
 
 
     <exec dir="${bldDir}/cran" executable="R" failonerror="TRUE">
-      <arg line="--vanilla"/>
-      <arg line="CMD check --as-cran ${project.pkg.name}"/>
+      <arg line="CMD check"/>
+      <arg line="--as-cran"/>
+      <arg line="${project.pkg.name}"/>
     </exec>
 
     <exec dir="${bldDir}/cran" executable="R" failonerror="TRUE">
-      <arg line="CMD build --resave-data ${project.pkg.name}"/>
+      <arg line="CMD build"/>
+      <arg line="--resave-data"/>
+      <arg line="${project.pkg.name}"/>
     </exec>
   </target>
 
@@ -410,11 +334,11 @@ ${scriptFileExitLine}
     ========================================================================
   -->
   <target name="install-generic" depends="setSourceTree,internal.osPrep,internal.setCranLibs">
-    <echo message="Install Package From Source Initiated in ${cranLibs}"/>
     <exec dir="${bldDir}/cran" executable="R" failonerror="TRUE">
-      <arg line="--vanilla"/>
       <arg line="CMD INSTALL"/>
-      <arg line="-l ${cranLibs} --build"/>
+      <arg line="--clean"/>
+      <arg line="--preclean"/>
+      <arg line="--build"/>
       <arg line="${project.pkg.name}"/>
     </exec>
   </target>
@@ -469,8 +393,7 @@ ${scriptFileExitLine}
       PACKAGE target, Entry Point
     ========================================================================
   -->
-  <target name="package" depends="setMltvariate, package-generic"/>
-  <target name="package-stealth" depends="setStealth, package-generic"/>
+  <target name="package" depends="package-generic"/>
 
   
   <!--
@@ -478,8 +401,7 @@ ${scriptFileExitLine}
       INSTALL target, Entry Point
     ========================================================================
   -->
-  <target name="install" depends="setMltvariate, install-generic"/>
-  <target name="install-stealth" depends="setStealth, install-generic"/>
+  <target name="install" depends="install-generic"/>
 
   
  <!--
@@ -488,7 +410,6 @@ ${scriptFileExitLine}
     ========================================================================
   -->
   <target name="package-and-install"     depends="package, install, serial"/>
-  <target name="package-and-install-stealth" depends="package-stealth, install-stealth, serial-stealth"/>
 
   
   <!--
@@ -496,9 +417,7 @@ ${scriptFileExitLine}
       SERIAL-XX target, DEFAULT Entry Point
     ========================================================================
   -->
-  <target name="serial"        depends="setMltvariate,serial-64-generic"/>
-  <target name="serial-stealth" depends="setStealth,serial-64-generic"/>
-
+  <target name="serial"        depends="serial-64-generic"/>
 
   <!--
     ========================================================================
@@ -516,21 +435,15 @@ ${scriptFileExitLine}
     <echo message="     --> generate a tar/zip file of the source tree"/>
     <echo message=""/>
     <echo message=" package"/>
-    <echo message=" package-stealth"/>
     <echo message="     --> generate the CRAN source package"/>
     <echo message=""/>
     <echo message=" install"/>
-    <echo message=" install-stealth"/>
     <echo message="     --> install the CRAN serial package"/>
     <echo message=""/>
     <echo message=" package-and-install"/>
-    <echo message=" package-and-install-stealth"/>
     <echo message="     --> package and install the CRAN serial package"/>
     <echo message=""/>
     <echo message=" serial"/>
-    <echo message="     --> build using 64-bit serial compiler"/>
-    <echo message="     --> *** DEFAULT TARGET ***"/>
-    <echo message=" serial-stealth"/>
     <echo message="     --> build using 64-bit serial compiler"/>
     <echo message=""/>
   </target>

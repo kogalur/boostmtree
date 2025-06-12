@@ -1,15 +1,158 @@
-##------------------------------------------------------
-## internal functions
-##------------------------------------------------------
-##
-
-## BLUP estimates for random effects (u_k) and fixed effects (alpha_k)
-## returned object is a list of lists
+# Function is use to create a diagonal matrix from a vector
+DiagMat <- function(X){
+  n <- length(X)
+  if(n == 1){
+    XMat <- as.matrix(X)
+  }else
+  {
+    XMat <- diag(X)
+  }
+  return(XMat)
+}
+# Converting linear predictor to mu using family
+GetMu <- function(Linear_Predictor,Family){
+  if(is.list(Linear_Predictor)){
+    n <- length(Linear_Predictor)
+    if(Family == "Continuous"){
+      mu <- lapply(1:n,function(i){
+        Linear_Predictor[[i]]
+      })
+    }
+    if(Family == "Binary" || Family == "Ordinal"){
+      mu <- lapply(1:n,function(i){
+        exp(Linear_Predictor[[i]])/(1 + exp(Linear_Predictor[[i]]) )
+      })
+    }
+    if(Family == "Nominal"){
+      mu <- lapply(1:n,function(i){
+        exp(Linear_Predictor[[i]])
+      })
+    }
+  }
+  else{
+    if(Family == "Continuous"){
+      mu <- Linear_Predictor
+    }
+    if(Family == "Binary" || Family == "Ordinal"){
+      mu <- exp(Linear_Predictor)/(1 + exp(Linear_Predictor) )
+    }
+    if(Family == "Nominal"){
+      mu <- exp(Linear_Predictor)
+    }
+  }
+  return(mu)
+}
+# Converting linear predictor to mu using family
+GetMu_Lambda <- function(Linear_Predictor,Family){
+  if(is.list(Linear_Predictor)){
+    n <- length(Linear_Predictor)
+    if(Family == "Continuous"){
+      mu <- lapply(1:n,function(i){
+        rep(1,length(Linear_Predictor[[i]]))
+      })
+    }
+    if(Family == "Binary" || Family == "Ordinal"){
+      mu <- lapply(1:n,function(i){
+        exp(Linear_Predictor[[i]])/(1 + exp(Linear_Predictor[[i]]) )
+      })
+    }
+    if(Family == "Nominal"){
+      mu <- lapply(1:n,function(i){
+        exp(Linear_Predictor[[i]])
+      })
+    }
+  }
+  else{
+    if(Family == "Continuous"){
+      mu <- rep(1,length(Linear_Predictor))
+    }
+    if(Family == "Binary" || Family == "Ordinal"){
+      mu <- exp(Linear_Predictor)/(1 + exp(Linear_Predictor) )
+    }
+    if(Family == "Nominal"){
+      mu <- exp(Linear_Predictor)
+    }
+  }
+  return(mu)
+}
+# Apply a transform H function
+Transform_H <- function(Mu, Family){
+  if(is.list(Mu)){
+    n <- length(Mu)
+    if(Family == "Continuous"){
+      H_Mu <- lapply(1:n,function(i){
+        DiagMat(rep(1,length(Mu[[i]])))
+      })
+    }
+    if(Family == "Binary" || Family == "Ordinal"){
+      H_Mu <- lapply(1:n,function(i){
+        DiagMat(Mu[[i]]*(1 - Mu[[i]]))
+      })
+    }
+    if(Family == "Nominal"){
+      H_Mu <- lapply(1:n,function(i){
+        DiagMat(Mu[[i]])
+      })
+    }
+  }
+  else{
+    if(Family == "Continuous"){
+      H_Mu <- DiagMat(rep(1,length(Mu)))
+    }
+    if(Family == "Binary" || Family == "Ordinal"){
+      H_Mu <- DiagMat(Mu*(1 - Mu))
+    }
+    if(Family == "Nominal"){
+      H_Mu <- DiagMat(Mu)
+    }
+  }
+  return(H_Mu)
+}
+# Function for obtaining index based on approx. matching 
+AppoxMatch <- function(x,y){
+  n <- length(x)
+  out <- unlist(lapply(1:n,function(i){
+    which.min(abs(x[i] - y))
+  }))
+  return(out)
+}
+# Function to remove covariates with all elements of a column or a row missing
+RemoveMiss.Fun <- function(X){
+  n <- nrow(X)
+  WhichRow <- unlist(lapply(1:n,function(i){
+    temp.var <- X[i,]
+    if(all(is.na(temp.var))){
+      out <- "remove"
+    }
+    else{
+      out <- "keep"
+    }
+    out
+  }))
+  WhichRow.remove <- which(WhichRow == "remove")
+  if(length(WhichRow.remove) > 0){
+    X <- X[-WhichRow.remove,]  
+  }
+  p <- ncol(X)
+  WhichCol <- unlist(lapply(1:p,function(i){
+    temp.var <- X[,i]
+    if(all(is.na(temp.var))){
+      out <- "remove"
+    }
+    else{
+      out <- "keep"
+    }
+    out
+  }))
+  WhichCol.remove <- which(WhichCol == "remove")
+  if(length(WhichCol.remove) > 0){
+    X <- X[,-WhichCol.remove]  
+  }
+  return(list(X = X,id.remove = if (length(WhichRow.remove) > 0) WhichRow.remove else NULL))
+}
 blup.solve <- function(transf.data, membership, sigma, Kmax) {
-
   lapply(1:Kmax, function(k) {
     pt.k <- (membership == k)
-    ##sum transformed quantites over the terminal node k
     XX <- Reduce("+", lapply(which(pt.k), function(j) {
       Xnew <- transf.data[[j]]$Xnew
       t(Xnew) %*% Xnew
@@ -33,38 +176,22 @@ blup.solve <- function(transf.data, membership, sigma, Kmax) {
       Ynew <- transf.data[[j]]$Ynew
       t(Znew) %*% Ynew
     }))
-
-    ## use solution on p 19-20 Robinson 1991
-
-    ## .. first we solve for the fixed effects
     Q = ZZ + diag(sigma, nrow(ZZ))
     V = XZ %*% solve(Q, diag(1, nrow(ZZ)))
     A = XX - V %*% t(XZ)
     b = XY - V %*% ZY
     fix.eff <- tryCatch({qr.solve(A, b)}, error = function(ex){NULL})
     if (is.null(fix.eff)) {
-      fix.eff <- rep(0, ncol(A))####TBD TBD TBD: what is a good default value?
+      fix.eff <- rep(0, ncol(A))
     }
-   
-    
-    ## .. now solve the random effects
     rnd.eff <- tryCatch({qr.solve(Q, ZY - t(XZ) %*% fix.eff)}, error = function(ex){NULL})
     if (is.null(rnd.eff)) {
-      rnd.eff <- rep(0, ncol(Q))####TBD TBD TBD: what is a good default value?
+      rnd.eff <- rep(0, ncol(Q))
     }
-
-    ## .. test the accuracy of the solution
-    ## accr <- sum(abs(XX %*% fix.eff + XZ %*% rnd.eff - XY))
-
-    ## .. return the BLUP solution
     return(list(fix.eff = fix.eff, rnd.eff = rnd.eff))
-    
   })
-          
 }
-
-## gls mean-squared error
-gls.mse  <- function(f, dta, trn, type = c("corCompSym", "corAR1", "corSymm", "iid")) {
+gls.rmse  <- function(f, dta, trn, type = c("corCompSym", "corAR1", "corSymm", "iid")) {
   f <- as.formula(f)
   type <- match.arg(type, c("corCompSym", "corAR1", "corSymm", "iid"))
     gls.grow <- tryCatch({
@@ -85,89 +212,120 @@ gls.mse  <- function(f, dta, trn, type = c("corCompSym", "corAR1", "corSymm", "i
     gls.pred  <- tapply(model.matrix(f, dta[-trn,]) %*% gls.grow$coef,
                         dta[-trn, "id"], function(x) {x})
     y.test <- tapply(dta[-trn, "y"], dta[-trn, "id"], function(x) {x})
-    l2Dist(gls.pred, y.test)
+    ysd <- sd(dta[trn, "y"], na.rm = TRUE)
+    if (ysd < 1e-6) {
+      ysd <- 1
+    }
+    l2Dist(gls.pred, y.test) / ysd
   }
   else {
     NA
   }
 }
-
-
-## hidden bootstrap value
 is.hidden.bootstrap <-  function (user.option) {
-
   if (is.null(user.option$bootstrap)) {
     "by.root"
   }
   else {
     as.character(user.option$bootstrap)
   }
-
 }
-
-## hidden CVlambda
+is.hidden.bst.frac <-  function (user.option) {
+  if (is.null(user.option$bst.frac)) {
+    0.632
+  }
+  else {
+    user.option$bst.frac
+  }
+}
+is.hidden.samp.mat <-  function (user.option) {
+  if (is.null(user.option$samp.mat)) {
+    NULL
+  }
+  else {
+    user.option$samp.mat
+  }
+}
+is.hidden.nsplit <-  function (user.option) {
+  if (is.null(user.option$nsplit)) {
+    NULL
+  }
+  else {
+    user.option$nsplit
+  }
+}
+is.hidden.samptype <-  function (user.option) {
+  if (is.null(user.option$samptype)) {
+    "swor"
+  }
+  else {
+    as.character(user.option$samptype)
+  }
+}
+is.hidden.xvar.wt <-  function (user.option) {
+  if (is.null(user.option$xvar.wt)) {
+    NULL
+  }
+  else {
+    user.option$xvar.wt
+  }
+}
+is.hidden.case.wt <-  function (user.option) {
+  if (is.null(user.option$case.wt)) {
+    NULL
+  }
+  else {
+    user.option$case.wt
+  }
+}
+is.hidden.seed.value <-  function (user.option) {
+  if (is.null(user.option$seed.value)) {
+    NULL
+  }
+  else {
+     user.option$seed.value
+  }
+}
 is.hidden.CVlambda <-  function (user.option) {
-
   if (is.null(user.option$CVlambda)) {
     FALSE
   }
   else {
     user.option$CVlambda
   }
-
 }
-
-## hidden CVrho
 is.hidden.CVrho <-  function (user.option) {
-
   if (is.null(user.option$CVrho)) {
     TRUE
   }
   else {
     user.option$CVrho
   }
-
 }
-
-
-## hidden ntree value
 is.hidden.ntree <-  function (user.option) {
-
   if (is.null(user.option$ntree)) {
     1
   }
   else {
     max(1, user.option$ntree)
   }
-
 }
-
-## hidden partial plot value
 is.hidden.partial <-  function (user.option) {
-
   if (is.null(user.option$partial)) {
     FALSE
   }
   else {
     TRUE
   }
-
 }
-
-## hidden rho value
 is.hidden.rho <-  function (user.option) {
-
   if (is.null(user.option$rho)) {
-    TRUE
+    NULL
   }
   else {
     user.option$rho
   }
-  
 }
-
-
-##l1 norm
 l1Dist <- function(y1, y2) {
   if (length(y1) != length(y2)) {
     stop("y1 and y2 must have same the length\n")
@@ -176,8 +334,6 @@ l1Dist <- function(y1, y2) {
     mean(abs(unlist(y1[[i]]) - unlist(y2[[i]])), na.rm = TRUE)
   })), na.rm = TRUE)
 }
-
-##l2 norm
 l2Dist <- function(y1, y2) {
   if (length(y1) != length(y2)) {
     stop("y1 and y2 must have same the length\n")
@@ -186,20 +342,13 @@ l2Dist <- function(y1, y2) {
     mean((unlist(y1[[i]]) - unlist(y2[[i]]))^2, na.rm = TRUE)
   })), na.rm = TRUE))
 }
-
-## line plot where x and y are lists of the same length
 line.plot <- function(x, y, ...) {
-
 #  n <- length(x)
 #  o <- lapply(1:n, function(i) {
 #    lines(x[[i]], y[[i]], col = "gray", lty = 2)
 #  })
-
   mapply(lines, x, y = y, col = "gray", lty = 2)
-  
 }
-
-## modified lowess
 lowess.mod <- function(x, y, ...) {
   na.pt <- is.na(x) | is.na(y)
   if (all(na.pt) || sd(y, na.rm = TRUE) == 0) {
@@ -209,47 +358,36 @@ lowess.mod <- function(x, y, ...) {
     lowess(x[!na.pt], y[!na.pt], ...)
   }
 }
-
-## parses boosted tree to determine variable split depth
 parse.depth <- function(obj) {
-  obj <- stat.split(obj)[[1]]##there is only one tree
-  ##determine the depth for each variable
+  obj <- stat.split(obj)[[1]]
   depth <- unlist(lapply(1:length(obj), function(k) {
     if (!is.null(obj[[k]])) {
       min(obj[[k]][, "dpthID"], na.rm = TRUE)
     }
-    else {##did not split
+    else {
       NA
     }
   }))
-  ## assign NA depths (non splitting variables) a maximal depth value
   if (!all(is.na(depth))) {
-    ## tree depth
     treeDepth <- max(unlist(lapply(1:length(obj), function(k) {
       if (!is.null(obj[[k]])) {
         max(obj[[k]][, "dpthID"], na.rm = TRUE)
       }
     })), na.rm = TRUE) 
-  depth[is.na(depth)] <- treeDepth + 1##maximal depth adds 1 (ONE)
+  depth[is.na(depth)] <- treeDepth + 1
   }
   depth
 }
-
-## B-spline penalty
 penBS <- function(d, pen.ord = 2) {
   if (d >= (pen.ord + 1)) {
-    ## define the differencing matrix
     D <- diag(d)
     for (k in 1:pen.ord) D <- diff(D)
-    ## the following yields the penalty matrix P = t(D) %*% D
     t(D) %*% D
   }
   else {
     diag(0, d)
   }
 }
-
-## B-spline penalty derivative
 penBSderiv <- function(d, pen.ord = 2) {
   if (d > 0) {
     if (d >= (pen.ord + 1)) {
@@ -267,29 +405,18 @@ penBSderiv <- function(d, pen.ord = 2) {
     0
   }
 }
-  
-
-## choose a case at random, plot time profiles for its proximities
-plot.profile.prx <- function(obj, col = NULL, rnd.case = NULL, cut = .95, restrictX = TRUE) {
+plotProfileProximity <- function(obj, col = NULL, rnd.case = NULL, cut = .95, restrictX = TRUE) {
   if (is.null(obj$proximity)) {
     stop("this function requires proximity = TRUE in the predict call")
   }
-
-  ## extract the proximity matix
   prx <- obj$proximity
-
-  ## grow quantities
   time <- obj$boost.obj$time
   time.unq <- sort(unique(unlist(time)))
   DbetaT <- cbind(1, obj$boost.obj$D) %*% t(obj$boost.obj$beta)
   muGrid <- lapply(1:ncol(DbetaT), function(i) {DbetaT[, i]})
   mu <- obj$boost.obj$mu
-
-  ## predict quantities
   time.hat <- obj$time
   muhat <- obj$muhat
-
-  ## proximity calculations
   if (is.null(rnd.case)) {
     rnd.case <- sample(1:nrow(prx), size = 1)
   }
@@ -299,17 +426,12 @@ plot.profile.prx <- function(obj, col = NULL, rnd.case = NULL, cut = .95, restri
   rnd.prx <- rnd.prx[rnd.match]
   rnd.time <- time.hat[[rnd.case]]
   rnd.mean <- muhat[[rnd.case]]
-  
   prx.mu <- c(do.call(cbind, lapply(rnd.match, function(i){muGrid[[i]]}))
                   %*% rnd.prx / sum(rnd.prx))
   prx.which.time <- is.element(time.unq, unlist(lapply(rnd.match, function(i){time[[i]]})))
   prx.time <- time.unq[prx.which.time]
   prx.mu <- prx.mu[prx.which.time] 
-
-  ## custom color
   if (is.null(col)) col <- rep(1, length(rnd.prx))
-
-  ## plot
   plot(supsmu(rnd.time, rnd.mean),
        xlim = if (restrictX) range(rnd.time) else range(c(rnd.time, prx.time)),
        ylim = range(c(rnd.mean, prx.mu, unlist(lapply(rnd.match, function(i){mu[[i]]})))),
@@ -329,25 +451,15 @@ plot.profile.prx <- function(obj, col = NULL, rnd.case = NULL, cut = .95, restri
     lines(lowess(prx.time, prx.mu), lty = 1, lwd = 2, col = 1)
   }
   legend("bottomleft", bty = "n", legend = c(paste("avg prx.", format(mean(rnd.prx, na.rm = TRUE), digits=3))))
-
-  ## return the matched data
   invisible(obj$boost.obj$x[rnd.match,, drop = FALSE])
-  
 }
-
-## point plot where x and y are lists of the same length
 point.plot <- function(x, y, ...) {
-
 #  n <- length(x)
 #  o <- lapply(1:n, function(i) {
 #    points(x[[i]], y[[i]], pch = 16)
 #  })
-  
   mapply(points, x, y = y, pch = 16)
-  
 }
-
-## constant used in inverse of equicorrelation matrix
 rho.inv <- function(ni, rho, tol = 1e-2) {
   m <- ni - 1
   if (m == 0) {
@@ -360,8 +472,6 @@ rho.inv <- function(ni, rho, tol = 1e-2) {
     rho / (1 + m * rho)
   }
 }
-
-## constant used in inverse square-root of equicorrelation matrix
 rho.inv.sqrt <- function(ni, rho, tol = 1e-2) {
   m <- ni - 1
   if (m == 0) {
@@ -375,13 +485,30 @@ rho.inv.sqrt <- function(ni, rho, tol = 1e-2) {
     as.numeric(Re(polyroot(c(ri, -2, ni))))[1]
   }
 }
-
-## robust sigma function for numerical stability when penalizing
 sigma.robust <- function(lambda, rho) {
-
-  ## this is the real value  lamda * (1 - rho)
-  ## this is what we return
-
   lambda
-  
+}
+papply <- function(X,FUN,...,mc.preschedule = TRUE, mc.set.seed = TRUE,
+                   mc.silent = FALSE, mc.cores = getOption("mc.cores", 2L),
+                   mc.cleanup = TRUE, mc.allow.recursive = TRUE){
+  result.mclapply <- mclapply(X,FUN,...,mc.preschedule = mc.preschedule, mc.set.seed = mc.set.seed,
+                              mc.silent = mc.silent, mc.cores = mc.cores,
+                              mc.cleanup = mc.cleanup, mc.allow.recursive = mc.allow.recursive)
+  which.null <- which(unlist(lapply(X,function(i){
+    is.null( result.mclapply[[i]] )
+  })))
+  lth.which.null <- length(which.null)
+  if(lth.which.null > 0){
+    result.lapply <- lapply(which.null,FUN,...)
+  }
+  count <- 0
+  result <- lapply(X,function(i){
+    if( any(i == which.null) ){
+      count <<- count + 1
+      result.lapply[[ count ]]
+    }else{
+      result.mclapply[[i]]
+    }
+  })
+  return(result)
 }

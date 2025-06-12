@@ -2,7 +2,7 @@
 \alias{boostmtree.news}
 \title{Show the NEWS file}
 \description{
-  Show the NEWS file of the \pkg{_PROJECT_PACKAGE_NAME_} package.
+  Show the NEWS file of the \pkg{boostmtree} package.
 }
 \usage{
 boostmtree.news(...)
@@ -14,6 +14,6 @@ boostmtree.news(...)
   None.
 }
 \author{
-  Hemant Ishwaran, Pande A.  and Udaya B. Kogalur
+  Hemant Ishwaran, Amol Pande  and Udaya B. Kogalur
 }
 \keyword{documentation}
