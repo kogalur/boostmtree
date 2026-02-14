@@ -1,451 +1,286 @@
 <?xml version="1.0"?>
 
-<!-- ===================================================== -->
-<!-- BOOSTMTREE Project File    Apache Ant version 1.10.0  -->
-<!-- ===================================================== -->
+<!--
+========================================================================
+  Top Level Project File
+========================================================================
+-->
 
-<project name="BOOSTMTREE Build Suite" basedir="." default="usage">
+<project name="TOP LEVEL Build File" basedir="." default="usage">
 
-  <!-- Generic project properties -->
-  <property name="project.name" value="BOOSTMTREE Build Suite"/>
-  <property name="project.version.token" value="_PROJECT_VERSION_ID_"/>
+  <!-- This directory. -->
+  <property name="project.name"       value="boostmtree"/>
 
-  <property name="project.version" value="1.5.2"/>
-  <property name="project.build.token" value="_PROJECT_BUILD_ID_"/>
-  <property name="project.build" value="bld20250612"/>
+  <!-- Dependency package.  -->
+  <property name="rfsrc.pkg.name"         value="randomForestSRC"/>
 
-  <property name="project.pkg.name.token" value="_PROJECT_PACKAGE_NAME_"/>
-  <property name="rfsrc.pkg.name.token" value="_RFSRC_PACKAGE_NAME_"/>
-
-  <property name="project.pkg.name"  value="boostmtree"/>
-  <property name="rfsrc.pkg.name"  value="randomForestSRC"/>
-  <property name="logFile" value="boostmtree.log"/>
+  <!-- Install name, gives us flexibility.  --> 
+  <property name="project.pkg.name"       value="boostmtree"/>
   
+  <property name="project.version"    value="1.5.3"/>
+  <property name="project.build"      value="bld20260214"/>
   
-  <property name="http.prefix.token" value="_HTTP_PREFIX_"/>
-  <property name="http.prefix" value="http://"/>
-
+  <property name="minimum.version"    value="0.0.0.0"/>
+  
   <property environment="env"/>
 
-  <!-- Static Locations -->
-  <property name="qacDir" value="docs/quality"/>
-  <property name="pkgDir"  value="cran"/>
+  <import  file="build.init.xml"/>
 
-
-  <!--
-    ========================================================================
-    ========================================================================
-      Include Internal Common Targets..
-    ========================================================================
-    ========================================================================
-  -->
-  <include file="internal.xml"/>
 
 
   <!--
     ========================================================================
-    ========================================================================
-      Internal CRAN targets follow.  Not for end use.
-    ========================================================================
+      Internal Target:  Set the trace.
     ========================================================================
   -->
 
+  <!-- CAUTION:  These comments affect the             -->
+  <!-- CAUTION:  public build.                         -->
 
-  <!--
-    ========================================================================
-      Internal Target:  Set source tree.
-    ========================================================================
-  -->
-  <target name="setSourceTree" depends="internal.init,internal.testSourceTree">
-    <property name="bldDir" value="../build"/>
-  </target>
+  <!-- CAUTION:  "trace-remove" means ALL TRACE IS REMOVED:         -->
+  <target name="trace-remove"> </target>
 
-
-  <!--
-    ========================================================================
-      Internal Target:  Prepare the CRAN output directories
-    ========================================================================
-  -->
-  <target name="prepare" depends="setSourceTree,internal.osPrep">
-
-    <mkdir dir="${bldDir}"/>
-    <mkdir dir="${bldDir}/quality"/>
-    <mkdir dir="${bldDir}/quality/data"/>
-
-    <mkdir dir="${bldDir}/quality/benchmark"/>
-    <mkdir dir="${bldDir}/quality/output"/>
-
-    <copy file="bench.xml" todir="${bldDir}"/>
-    <copy file="internal.xml" todir="${bldDir}"/>
-    <move file="${bldDir}/bench.xml" tofile="${bldDir}/build.xml"/>
-    <replace file="${bldDir}/build.xml" token="${project.version.token}" value="${project.version}"/>
-    <replace file="${bldDir}/build.xml" token="${project.build.token}" value="${project.build}"/>
-    <replace file="${bldDir}/build.xml" token="${project.build.token}" value="${project.build}"/>
-
-    <copy file="docs/build.properties" todir="${bldDir}"/>
-
-  </target>
-
-
-  <!--
-    ========================================================================
-      Internal Target:  Copy the supporting CRAN files to the build tree.
-    ========================================================================
-  -->
-  <target name="quality" depends="prepare,source-package">
-
-    <!-- This allows us to switch between non-stealth and stealth
-         builds as the two files below has code specific tokens that need
-         to be reinitialized.  /-->
-    <delete file="${bldDir}/quality/load.R" />
-    <delete file="${bldDir}/quality/header.R" />
-
-    <copy todir="${bldDir}/quality/data">
-      <fileset dir="${pkgDir}/data">
-        <include name="*.txt"/>
-        <include name="*.csv"/>
-        <include name="*.RData"/>
-      </fileset>
-    </copy>
-
-    <copy todir="${bldDir}/quality/data">
-      <fileset dir="${qacDir}/data">
-        <include name="*.txt"/>
-        <include name="*.rda"/>
-      </fileset>
-    </copy>
-
-
-    <copy todir="${bldDir}/quality">
-      <fileset dir="${qacDir}">
-        <include name="*.R"/>
-      </fileset>
-      <filterchain>
-        <tokenfilter>
-          <replacestring from="${project.pkg.name.token}" to="${project.pkg.name}"/>
-        </tokenfilter>
-      </filterchain>
-    </copy>
-
-    <copy todir="${bldDir}/quality/benchmark">
-      <fileset dir="${qacDir}/benchmark">
-        <include name="*.txt"/>
-        <include name="*.csv"/>
-      </fileset>
-    </copy>
-
-
-    <replace file="${bldDir}/quality/load.R" token="${rfsrc.pkg.name.token}" value="${rfsrc.pkg.name}"/>
-
-    <replace file="${bldDir}/quality/load.R" token="_PROJECT_ARCH_TYPE_" value="${Rlib}"/>
-    <replace file="${bldDir}/quality/load.R" token="_PROJECT_SUPPORT_OPENMP_" value="${openMPswitch}"/>
-
-    <replace file="${bldDir}/quality/load.R" token="${project.version.token}" value="${project.version}"/>
-    <replace file="${bldDir}/quality/load.R" token="${project.build.token}" value="${project.build}"/>
-
-    <echo file="${bldDir}/quality/generic${scriptExtension}" append="false">${scriptFileCommentLine}
-R ${Rarch} CMD BATCH --no-restore --no-save generic.R output${sep}${logFile}
-${scriptFileExitLine}
-    </echo>
-
-    <!--
-       TBD TBD TBD  Bivariate Boosting Benchmarks TBD TBD TBD
-    -->
-
-    <chmod dir="${bldDir}/quality" perm="u+rwx" includes="*${scriptExtension}" os="Linux,Mac OS X,SunOS"/>
-
-  </target>
+  <!-- CAUTION:  "trace-active" means THIS TARGET IS ACTIVE:           -->
+  <!-- CAUTION:  ACTIVATE THIS TARGET TO TURN ON THE OPTIONS BELOW:    -->  
+  <target name="trace-active"> </target>
 
   
-
   <!--
     ========================================================================
-      Internal target, source-package
+      Internal target, public-generic
     ========================================================================
   -->
-  <target name="source-package" depends="setSourceTree">
+  <target name="public-generic" depends="trace-remove">
 
-    <mkdir  dir="${bldDir}"/>
-    <mkdir  dir="${bldDir}/cran"/>
-    <mkdir  dir="${bldDir}/cran/${project.pkg.name}"/>
-    <mkdir  dir="${bldDir}/cran/${project.pkg.name}/inst"/>
-    <mkdir  dir="${bldDir}/cran/${project.pkg.name}/data"/>
-    <mkdir  dir="${bldDir}/cran/${project.pkg.name}/man"/>
-    <mkdir  dir="${bldDir}/cran/${project.pkg.name}/R"/>
+    <!-- Filterchains are used before filtersets. -->
 
-    <copy todir="${bldDir}/cran/${project.pkg.name}/R">
-      <fileset dir="${pkgDir}/R">
-        <include name="*.R"/>
+    <delete  dir="target/public/"/>
+
+    <mkdir  dir="target/public/"/>
+    <mkdir  dir="target/public/src"/>
+    <mkdir  dir="target/public/src/main"/>
+    <mkdir  dir="target/public/src/main/c/cran"/>
+    <mkdir  dir="target/public/src/main/resources"/>
+    <mkdir  dir="target/public/src/main/resources/cran"/>
+    <mkdir  dir="target/public/src/main/resources/cran/scripts"/>
+    <mkdir  dir="target/public/src/main/resources/cran/inst"/>
+    <mkdir  dir="target/public/src/main/resources/cran/data"/>
+    <mkdir  dir="target/public/src/main/resources/cran/man"/>
+    <mkdir  dir="target/public/src/main/resources/cran/R"/>
+
+    <property name="dsmain"  value="src/main/"/>
+    <property name="dscran"  value="src/main/resources/cran"/>
+    
+    <property name="ptmain"  value="target/public/src/main/"/>
+    <property name="ptcran"  value="target/public/src/main/resources/cran"/>
+
+    <copy todir="${ptcran}/scripts">
+      <fileset dir="${dscran}/scripts">
+        <include name="*"/>
       </fileset>
-
-      <filterchain>
-        <fixcrlf eol="lf"/>
-      </filterchain>
-      <filterchain>
-        <replacestring from="##" to="//"/>
-        <stripjavacomments/>
-        <tokenfilter>
-            <ignoreblank/>
-        </tokenfilter>
-      </filterchain>
-
-      <filterchain>
-        <concatfilter prepend="${pkgDir}/copyright"/>
-        <tokenfilter>
-          <replacestring from="${project.pkg.name.token}" to="${project.pkg.name}"/>
-          <replacestring from="${project.version.token}" to="${project.version}"/>
-          <replacestring from="////" to="####"/>
-        </tokenfilter>
-      </filterchain>
-
-      <filterchain>
-        <fixcrlf eol="lf"/>
-      </filterchain>
-
+    </copy>
+    
+    <copy todir="${ptcran}/data">
+      <fileset dir="${dscran}/data">
+        <include name="*.txt"/>
+        <include name="*.RData"/>
+	      <include name="*.csv"/>
+      </fileset>
     </copy>
 
-    <copy todir="${bldDir}/cran/${project.pkg.name}/man">
-      <fileset dir="${pkgDir}/man">
+
+    <copy file="${dscran}/NAMESPACE" tofile="${ptcran}/NAMESPACE"> </copy>
+
+    <copy file="${dscran}/DESCRIPTION" tofile="${ptcran}/DESCRIPTION"> </copy>
+
+    <copy todir="${ptcran}/inst">
+      <fileset dir="${dscran}/inst">
+        <include name="*"/>
+      </fileset>
+    </copy>
+
+    <copy todir="${ptcran}/man">
+      <fileset dir="${dscran}/man">
         <include name="*.Rd"/>
       </fileset>
 
       <filterchain>
-        <fixcrlf eol="lf"/>
-      </filterchain>
-      <filterchain>
-        <stripjavacomments/>
-      </filterchain>
-
-      <filterchain>
         <tokenfilter>
-          <replacestring from="${http.prefix.token}" to="${http.prefix}"/>
+          <replacestring from="${http.prefix.token}"  to="${http.prefix}"/>
+          <replacestring from="${https.prefix.token}" to="${https.prefix}"/>
         </tokenfilter>
       </filterchain>
-
-      <filterchain>
-        <tokenfilter>
-          <replacestring from="${project.pkg.name.token}" to="${project.pkg.name}"/>
-        </tokenfilter>
-      </filterchain>
-
     </copy>
 
+    <copy todir="${ptcran}/R">
+      <fileset dir="${dscran}/R">
+        <include name="*.R"/>
+      </fileset>
 
-    <copy file="${pkgDir}/NAMESPACE" todir="${bldDir}/cran/${project.pkg.name}">
       <filterchain>
         <tokenfilter>
-          <replacestring from="${project.pkg.name.token}" to="${project.pkg.name}"/>
-          <replacestring from="${rfsrc.pkg.name.token}" to="${rfsrc.pkg.name}"/>
+            <ignoreblank/>
         </tokenfilter>
-      </filterchain>
-
-      <filterchain>
         <stripjavacomments/>
       </filterchain>
     </copy>
 
-    <copy file="${pkgDir}/inst/CITATION" todir="${bldDir}/cran/${project.pkg.name}/inst/"/>
-    <replace file="${bldDir}/cran/${project.pkg.name}/inst/CITATION" token="${project.pkg.name.token}" value="${project.pkg.name}"/>
 
-    <copy file="${pkgDir}/DESCRIPTION" todir="${bldDir}/cran/${project.pkg.name}">
+    <copy file="build.public.xml"
+          tofile="target/public/build.xml"
+          overwrite="true">
+
       <filterchain>
         <tokenfilter>
-          <replacestring from="${project.pkg.name.token}" to="${project.pkg.name}"/>
-          <replacestring from="${project.version.token}"  to="${project.version}"/>
-          <replacestring from="_PROJECT_DSTAMP_"          to="${DSTAMP}"/>
-          <replacestring from="${rfsrc.pkg.name.token}" to="${rfsrc.pkg.name}"/>
+          <replacestring from="@@PROJECT_PACKAGE_NAME@@" to="${project.pkg.name}"/>
+          <replacestring from="@@RFSRC_PACKAGE_NAME@@"   to="${rfsrc.pkg.name}"/>
+          <replacestring from="@@VARPRO_PACKAGE_NAME@@"  to="${varpro.pkg.name}"/>
+          <replacestring from="@@PROJECT_VERSION@@"      to="${project.version}"/>
+          <replacestring from="@@PROJECT_BUILD@@"        to="${project.build}"/>
+          <replacestring from="@@MINIMUM_VERSION@@"      to="${minimum.version}"/>
         </tokenfilter>
       </filterchain>
+
     </copy>
+
+    <copy file="build.init.xml"
+          tofile="target/public/build.init.xml"
+          overwrite="true"/>
+
+    <copy file="build.cran.xml"
+          tofile="target/public/build.cran.xml"
+          overwrite="true"/>
+
+  </target>    
+
+
+  <!--
+    ========================================================================
+      SOURCE-SECRET target, Entry Point
+    ========================================================================
+  -->
+  <target name="source-secret" depends="init">
+    <zip destfile="../${project.pkg.name}.${project.build}.zip"
+         basedir="../"
+         includes="${project.name}-secret/**"
+         excludes="${project.name}-secret/target/"/>
+  </target>
+
+  <!--
+    ========================================================================
+      PUBLIC target, Entry Point
+    ========================================================================
+  -->
+  <target name="public" depends="init, public-generic"/>
+
+  <!--
+    ========================================================================
+      SOURCE-CRAN target, Entry Point
+    ========================================================================
+  -->
+  <target name="source-cran"
+          depends="init, public-generic, source-cran-generic" />
     
-    <copy file="${pkgDir}/inst/NEWS" todir="${bldDir}/cran/${project.pkg.name}/inst">
-      <filterchain>
-        <tokenfilter>
-          <replacestring from="${project.pkg.name.token}" to="${project.pkg.name}"/>
-          <replacestring from="${project.version.token}" to="${project.version}"/>
-          <replacestring from="${project.build.token}" to="${project.build}"/>
-        </tokenfilter>
-      </filterchain>
-    </copy>
-
-    <!--
-      Compress Data Files ...
-    -->
-
-    <mkdir dir="${bldDir}/cran/staged"/>
-    <copy file="docs/scripts/compressData.R" todir="${bldDir}/cran/staged"/>
-
-    <copy todir="${bldDir}/cran/staged">
-      <fileset dir="${pkgDir}/data">
-        <include name="*.txt"/>
-        <include name="*.csv"/>
-        <include name="*.RData"/>
-      </fileset>
-    </copy>
-
-    <exec dir="${bldDir}/cran/staged" executable="R" failonerror="TRUE">
-      <arg line="CMD BATCH --no-restore --no-save "/>
-      <arg line="compressData.R"/>
-      <arg line="compressData.log"/>
+  <target name="source-cran-generic">
+    <exec dir="target/public" executable="ant" vmlauncher="FALSE" failonerror="TRUE">
+      <arg line="source-cran"/>
     </exec>
-
-    <copy todir="${bldDir}/cran/${project.pkg.name}/data">
-      <fileset dir="${bldDir}/cran/staged">
-        <include name="*.RData"/>
-      </fileset>
-    </copy>
-
-    <delete dir="${bldDir}/cran/staged" />
-
-    <copy todir="${bldDir}/cran/${project.pkg.name}/data">
-      <fileset dir="${pkgDir}/data">
-        <include name="*.RData"/>
-      </fileset>
-    </copy>
-
   </target>
 
   
-  
   <!--
     ========================================================================
-      Internal target:  package-generic
+      BUILD-CRAN target, Entry Point
     ========================================================================
   -->
-  <target name="package-generic" depends="clean,internal.osPrep,internal.setCranLibs,source-package">
+  <target name="build-cran"
+          depends="init, public-generic, build-cran-generic" />
 
-
-    <exec dir="${bldDir}/cran" executable="R" failonerror="TRUE">
-      <arg line="CMD check"/>
-      <arg line="--as-cran"/>
-      <arg line="${project.pkg.name}"/>
-    </exec>
-
-    <exec dir="${bldDir}/cran" executable="R" failonerror="TRUE">
-      <arg line="CMD build"/>
-      <arg line="--resave-data"/>
-      <arg line="${project.pkg.name}"/>
+  <target name="build-cran-generic">
+    <exec dir="target/public" executable="ant" vmlauncher="FALSE" failonerror="TRUE">
+      <arg line="build-cran"/>
     </exec>
   </target>
 
   <!--
     ========================================================================
-      Internal target:  install-generic
+      INSTALL-CRAN target, Entry Point
     ========================================================================
   -->
-  <target name="install-generic" depends="setSourceTree,internal.osPrep,internal.setCranLibs">
-    <exec dir="${bldDir}/cran" executable="R" failonerror="TRUE">
-      <arg line="CMD INSTALL"/>
-      <arg line="--clean"/>
-      <arg line="--preclean"/>
-      <arg line="--build"/>
-      <arg line="${project.pkg.name}"/>
+  <target name="install-cran"
+          depends="init, public-generic, install-cran-generic" />
+
+  <target name="install-cran-generic">
+    <exec dir="target/public" executable="ant" vmlauncher="FALSE" failonerror="TRUE">
+      <arg line="install-cran"/>
     </exec>
   </target>
 
-  <!--
-    ========================================================================
-      Internal target, serial-XX-generic
-    ========================================================================
-  -->
-  <target name="serial-64-generic" depends="internal.setSerial64,quality"/>
-
-
-
-  
-  <!--
-    ========================================================================
-      External SOURCE CRAN targets follow.
-    ========================================================================
-  -->
 
   <!--
     ========================================================================
-      CLEAN target, Entry Point
+      CHECK-AS-CRAN target, Entry Point
     ========================================================================
   -->
-  <target name="clean" depends="setSourceTree">
-    <delete dir="${bldDir}"/>
+  <target name="check-as-cran"
+          depends="init, public-generic, check-as-cran-generic" />
+
+  <target name="check-as-cran-generic">
+    <exec dir="target/public" executable="ant" vmlauncher="FALSE" failonerror="TRUE">
+      <arg line="check-as-cran"/>
+    </exec>
   </target>
-
-  
-  <!--
-    ========================================================================
-      SOURCE target, Entry Point
-    ========================================================================
-  -->
-  <target name="source" depends="setSourceTree">
-    <mkdir dir="${bldDir}"/>
-    <mkdir dir="${bldDir}/cran"/>
-    <zip destfile="${bldDir}/cran/boostmtree.${project.build}.zip"
-         basedir="../"
-         includes="boostmtree/**"
-         excludes=""/>
-    <tar destfile="${bldDir}/cran/boostmtree.${project.build}.tar"
-         basedir="../"
-         includes="boostmtree/**"
-         excludes=""/>
-  </target>
-
-
-  <!--
-    ========================================================================
-      PACKAGE target, Entry Point
-    ========================================================================
-  -->
-  <target name="package" depends="package-generic"/>
-
-  
-  <!--
-    ========================================================================
-      INSTALL target, Entry Point
-    ========================================================================
-  -->
-  <target name="install" depends="install-generic"/>
-
-  
- <!--
-    ========================================================================
-      PACKAGE-AND-INSTALL target, Entry Point
-    ========================================================================
-  -->
-  <target name="package-and-install"     depends="package, install, serial"/>
-
-  
-  <!--
-    ========================================================================
-      SERIAL-XX target, DEFAULT Entry Point
-    ========================================================================
-  -->
-  <target name="serial"        depends="serial-64-generic"/>
 
   <!--
     ========================================================================
       Help on usage.  List available targets
     ========================================================================
     -->
-  <target name="usage" depends="internal.init">
+  <target name="usage" depends="init">
     <echo message=""/>
     <echo message=" Available targets are:"/>
     <echo message=""/>
     <echo message=" clean"/>
-    <echo message="     --> delete the build tree"/>
+    <echo message=" clean-cran"/>
+    <echo message="     --> delete the specific target directory"/>    
     <echo message=""/>
-    <echo message=" source"/>
-    <echo message="     --> generate a tar/zip file of the source tree"/>
+    <echo message=" source-secret"/>
+    <echo message="     --> generate a zip file of the source tree"/>
     <echo message=""/>
-    <echo message=" package"/>
-    <echo message="     --> generate the CRAN source package"/>
+    <echo message=" source-cran"/>
+    <echo message="     --> create the CRAN source package"/>
     <echo message=""/>
-    <echo message=" install"/>
-    <echo message="     --> install the CRAN serial package"/>
+    <echo message=" build-cran"/>
+    <echo message="     --> build the CRAN package"/>
+    <echo message="     --> the tar ball is what you send to CRAN"/>
     <echo message=""/>
-    <echo message=" package-and-install"/>
-    <echo message="     --> package and install the CRAN serial package"/>
+    <echo message=" install-cran"/>
+    <echo message="     --> install the CRAN package"/>
+    <echo message="     --> this is a local install"/>
     <echo message=""/>
-    <echo message=" serial"/>
-    <echo message="     --> build using 64-bit serial compiler"/>
+    <echo message=" check-as-cran"/>
+    <echo message="     --> check the CRAN package"/>
+    <echo message="     --> this is a rigorous check"/>
     <echo message=""/>
+
+    <echo message=" public"/>
+    <echo message="     --> create the public repository"/>
+    <echo message=""/>
+    <echo message=""/>
+    
+    <echo message=" Available development clean targets (USE WITH CAUTION):"/>
+    <echo message=""/>
+    <echo message=" clean-test"/>
+    <echo message="     --> delete the test directory"/>    
+    <echo message=""/>
+    <echo message=" clean-quality"/>
+    <echo message="     --> delete the test/quality directory"/>    
+    <echo message=""/>
+    <echo message=" clean-R"/>
+    <echo message="     --> delete the test/quality/R directory"/>    
+    <echo message=""/>
+    <echo message=""/>
+    
   </target>
 
 </project>

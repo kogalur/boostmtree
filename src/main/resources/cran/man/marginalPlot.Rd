@@ -107,9 +107,9 @@ sltx <- sltx[[2]][[1]]
 plot(range(c(dltx[[1]][, 1], sltx[[1]][, 1])), range(c(dltx[[1]][, -1], sltx[[1]][, -1])),
      xlab = "age", ylab = "predicted y", type = "n")
 lines(dltx[[1]][, 1][order(dltx[[1]][, 1]) ], dltx[[1]][, -1][order(dltx[[1]][, 1]) ], 
-      lty = 1, lwd = 2, col = "red")
+     lty = 1, lwd = 2, col = "red")
 lines(sltx[[1]][, 1][order(sltx[[1]][, 1]) ], sltx[[1]][, -1][order(sltx[[1]][, 1]) ], 
-      lty = 1, lwd = 2, col = "blue")
+     lty = 1, lwd = 2, col = "blue")
 legend("topright", legend = c("DLTx", "SLTx"), lty = 1, fill = c(2,4))
 }
 }

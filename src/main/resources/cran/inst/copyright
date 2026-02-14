@@ -2,7 +2,6 @@
 ////**********************************************************************
 ////
 ////  BOOSTED MULTIVARIATE TREES FOR LONGITUDINAL DATA (BOOSTMTREE)
-////  Version _PROJECT_VERSION_ID_ (_PROJECT_BUILD_ID_)
 ////
 ////  Copyright 2016, University of Miami
 ////
@@ -32,33 +31,33 @@
 ////  ----------------------------------------------------------------
 ////  Written by:
 ////  ----------------------------------------------------------------
-////    Hemant Ishwaran, Ph.D.
-////    Professor, Division of Biostatistics
-////    Clinical Research Building, Room 1058
-////    1120 NW 14th Street
-////    University of Miami, Miami FL 33136
+////  Hemant Ishwaran, Ph.D.
+////  Director of Statistical Methodology
+////  Professor, Division of Biostatistics
+////  Clinical Research Building, Room 1058
+////  1120 NW 14th Street
+////  University of Miami, Miami FL 33136
 ////
-////    email:  hemant.ishwaran@gmail.com
-////    URL:    http://web.ccs.miami.edu/~hishwaran
-////    --------------------------------------------------------------
-////    Amol Pande, Ph.D.
-////    Assistant Staff,
-////    Thoracic and Cardiovascular Surgery
-////    Heart and Vascular Institute
-////    JJ4, Room 508B,
-////    9500 Euclid Ave,
-////    Cleveland Clinic, Cleveland, Ohio, 44195
+////  email:  hemant.ishwaran@gmail.com
+////  URL:    https://ishwaran.org/
 ////
-////    email:  amoljpande@gmail.com
-////    --------------------------------------------------------------
-////    Udaya B. Kogalur, Ph.D.
-////    Kogalur & Company, Inc.
-////    5425 Nestleway Drive, Suite L1
-////    Clemmons, NC 27012
+////  --------------------------------------------------------------
+////  Amol Pande, Ph.D.
+////  Assistant Staff,
+////  Thoracic and Cardiovascular Surgery
+////  Heart and Vascular Institute
+////  JJ4, Room 508B,
+////  9500 Euclid Ave,
+////  Cleveland Clinic, Cleveland, Ohio, 44195
 ////
-////    email:  ubk@kogalur.com
-////    URL:    http://www.kogalur.com
-////    --------------------------------------------------------------
+////  email:  amoljpande@gmail.com
+////  --------------------------------------------------------------
+////  Udaya B. Kogalur, Ph.D.
+////  Kogalur & Company, Inc.
+////
+////  email:  ubk@kogalur.com
+////  URL:    https://www.kogalur.com
+////  --------------------------------------------------------------
 ////
 ////**********************************************************************
 ////**********************************************************************

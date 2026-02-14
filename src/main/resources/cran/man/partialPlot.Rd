@@ -18,7 +18,7 @@
             Variable_Factor = FALSE,
             path_saveplot = NULL,
             Verbose = TRUE,
-            useCVflag = FALSE,
+            useCVflag = NULL,
             ...)}
 \arguments{
   \item{object}{A boosting object of class \code{(boostmtree, grow)}.}
@@ -46,7 +46,7 @@
   in \code{xvar.names} is a factor.}
   \item{path_saveplot}{Provide the location where plot should be saved. By default the plot will be saved at temporary folder.}
   \item{Verbose}{Display the path where the plot is saved?}
-  \item{useCVflag}{Should the predicted value be based on the estimate derived from oob sample?}
+  \item{useCVflag}{Should the predicted value be based on the estimate derived from oob sample? Default is NULL, which means if boostmtree function is executed with \code{cv.flag = TRUE}, then useCVflag becomes, which is ideal. However, user can change this option by setting useCVflag as TRUE or FALSE.}
   \item{...}{Further arguments passed to or from other methods.}
 }
 \details{
@@ -82,10 +82,10 @@ pp.obj <- partialPlot(object = boost.grow, xvar.names = "x1",plot.it = TRUE)
 pp.obj <- partialPlot(object = boost.grow, xvar.names = "x2",plot.it = TRUE)
 
 #partial plot using "x2" as the conditional variable
-pp.obj <- partialPlot(object = boost.grow, xvar.names = "x1",
-                      conditional.xvar = "x2", conditional.values = 1,plot.it = TRUE)
-pp.obj <- partialPlot(object = boost.grow, xvar.names = "x1",
-                      conditional.xvar = "x2", conditional.values = 2,plot.it = TRUE)
+pp.obj <- partialPlot(object = boost.grow, xvar.names = "x1", conditional.xvar = "x2", 
+                                           conditional.values = 1,plot.it = TRUE)
+pp.obj <- partialPlot(object = boost.grow, xvar.names = "x1", conditional.xvar = "x2", 
+                                            conditional.values = 2,plot.it = TRUE)
 
 ##------------------------------------------------------------
 ## Synthetic example (Response is binary)
@@ -113,12 +113,12 @@ spr.obj <- boostmtree(spirometry$features, spirometry$time, spirometry$id, spiro
             family = "Continuous",M = 300, nu = .025, nknots = 15)
 
 #partial plot of double-lung group at 5 years
-dltx <- partialPlot(object = spr.obj, xvar.names = "AGE",
-                    tm.unq = 5, subset=spr.obj$x$DOUBLE==1,plot.it = TRUE)
+dltx <- partialPlot(object = spr.obj, xvar.names = "AGE", tm.unq = 5, 
+                                      subset=spr.obj$x$DOUBLE==1,plot.it = TRUE)
 
 #partial plot of single-lung group at 5 years
-sltx <- partialPlot(object = spr.obj, xvar.names = "AGE",
-                    tm.unq = 5, subset=spr.obj$x$DOUBLE==0,plot.it = TRUE)
+sltx <- partialPlot(object = spr.obj, xvar.names = "AGE", tm.unq = 5, 
+                                      subset=spr.obj$x$DOUBLE==0,plot.it = TRUE)
 
 #combine the two plots: we use lowess smoothed values
 dltx <- dltx$l.obj[[1]]

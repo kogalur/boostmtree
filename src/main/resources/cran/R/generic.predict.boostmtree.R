@@ -125,34 +125,39 @@ generic.predict.boostmtree <- function(object,
   }else
   {
     gamma <- object$gamma.i.list
-    oob.list <- lapply(1:n.Q,function(q){  vector("list",M[q]) })
+    oob.list <- lapply(1:n.Q,function(q){  vector("list", M   ) })
   }
   
     if(any(is.na(X))){
     RemoveMiss.Obj <- RemoveMiss.Fun(X)
     X <- RemoveMiss.Obj$X
     id_all_na <- RemoveMiss.Obj$id.remove
-    id_any_na <- which(unlist(lapply(1:nrow(X),function(i){ any(is.na(X[i,])) } )))
+    id_any_na <- which(unlist(lapply(1:nrow(X),function(i){ any(is.na(X[i,,drop = FALSE])) } )))
     if(na.action == "na.omit"){
       id_na <- id_any_na
     } else
     {
       id_na <- id_all_na
     }
-    if( length(id_na) > 0 ){
+    if( length(id_na) > 0 )
+    {
       id.remove <- id.unq[id_na]
       id.unq.revise <- setdiff(id.unq,id.remove)
       index.id_revise <- match(id.unq.revise,id.unq)
       id.unq <- id.unq.revise
       n <- length(id.unq)
       tm <- lapply(index.id_revise,function(i){ tm[[i]]  })
-      X <- X[index.id_revise,drop = FALSE]
-      id <- unlist(lapply(1:n,function(i){ id[id == id.unq[i] ]    }))
+      if(na.action == "na.omit")
+      {       
+        X <- X[index.id_revise,,drop = FALSE]
+      }
       if(testFlag){
          y <- unlist(lapply(1:n,function(i){ y[id == id.unq[i] ]    }))
       }
+      id <- unlist(lapply(1:n,function(i){ id[id == id.unq[i] ]    }))
     }
   }
+
   id.index <- lapply(1:n,function(i){
     which(id == id.unq[i] )
   })
@@ -369,10 +374,28 @@ generic.predict.boostmtree <- function(object,
         else {
           Mopt[q] <- M
         }
-       rmse[q] <- err.rate[[q]][Mopt[q], "l2"]
+        #----------------------------------------------------------------------------------
+        # Date: 09/04/2020
+
+        # I am removing the code to calculate rmse here, and placing it separately
+        # so that estimation of rmse should be done separately to the estimate of Mopt
+        #----------------------------------------------------------------------------------
       }
       else {
         Mopt[q] <- M
+      }
+    }
+
+    if(family == "Ordinal")
+    {
+      Mopt <- rep(max(Mopt,na.rm = TRUE),n.Q)
+    }
+
+    if(testFlag)
+    {
+      for(q in 1:n.Q)
+      {
+        rmse[q] <- err.rate[[q]][Mopt[q], "l2"]
       }
     }
     
@@ -510,6 +533,14 @@ generic.predict.boostmtree <- function(object,
     })
   })
   
+    #----------------------------------------------------------------------------------
+    # Date: 05/12/2023
+
+    # If Mopt for [q-1] is smaller than Mopt for [q], then ifelse argument below
+    # can create a problem because l_pred_db_hat_Temp[[q-1]][[i]][[m]] for larger m was
+    # not available. To fix this, I have changed Mopt for ordinal above, such that,
+    # for each q, I chose to use Mopt which is max of all Mopt. 
+    #----------------------------------------------------------------------------------
   
   l_pred_db_hat <- lapply(1:n.Q,function(q){
     lapply(1:n,function(i){

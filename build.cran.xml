@@ -1,0 +1,259 @@
+<?xml version="1.0"?>
+
+<!--
+========================================================================
+  CRAN Level Project File
+========================================================================
+-->
+
+<project name="CRAN Build File" basedir="." >
+
+  
+  <!--
+    ========================================================================
+      SOURCE-CRAN target, Entry Point
+    ========================================================================
+  -->
+  <target name="source-cran" depends="init,
+                                      clean-cran,
+                                      prelim-cran" />
+
+
+
+  <!--
+      ========================================================================
+      Internal Target:  prelim-cran
+      ========================================================================
+  -->
+  <target name="prelim-cran">
+  
+    <delete dir="target/cran"/>
+
+    <mkdir  dir="target/cran"/>
+    <mkdir  dir="target/cran/${project.pkg.name}"/>
+    <mkdir  dir="target/cran/${project.pkg.name}/inst"/>
+    <mkdir  dir="target/cran/${project.pkg.name}/data"/>
+    <mkdir  dir="target/cran/${project.pkg.name}/man"/>
+    <mkdir  dir="target/cran/${project.pkg.name}/R"/>
+
+    <property name="ppscran"  value="src/main/resources/cran"/>
+    <property name="pptcran"  value="target/cran/${project.pkg.name}"/>
+
+    
+    <copy todir="${pptcran}">
+      <fileset dir="${ppscran}">
+        <include name="NAMESPACE"/>
+        <include name="DESCRIPTION"/>
+        <include name="configure.ac"/>
+        <include name="configure.win"/>
+        <include name="cleanup"/>
+        <include name="cleanup.win"/>
+      </fileset>
+
+      <filterchain>
+        <tokenfilter>
+          <replacestring from="_PROJECT_PACKAGE_NAME_" to="${project.pkg.name}"/>
+          <replacestring from="_RFSRC_PACKAGE_NAME_"   to="${rfsrc.pkg.name}"/>
+          <replacestring from="_VARPRO_PACKAGE_NAME_"  to="${varpro.pkg.name}"/>
+          <replacestring from="_PROJECT_VERSION_"      to="${project.version}"/>
+          <replacestring from="_PROJECT_DSTAMP_"       to="${DSTAMP}"/>
+        </tokenfilter>
+      </filterchain>
+    </copy>
+
+    <chmod file="${pptcran}/cleanup" perm="ugo+x" os="Linux,Mac OS X"/>
+
+    <copy todir="${pptcran}/inst">
+      <fileset dir="${ppscran}/inst">
+        <include name="*"/>
+      </fileset>
+
+      <filterchain>
+        <tokenfilter>
+          <replacestring from="_PROJECT_PACKAGE_NAME_" to="${project.pkg.name}"/>
+          <replacestring from="_PROJECT_VERSION_"      to="${project.version}"/>
+          <replacestring from="_PROJECT_BUILD_"        to="${project.build}"/>
+          <replacestring from="_PROJECT_DSTAMP_"       to="${DSTAMP}"/>
+        </tokenfilter>
+      </filterchain>
+    </copy>
+
+
+    <!--
+      Compress Data Files ... OMITTED
+    -->
+
+
+    <copy todir="${pptcran}/man">
+      <fileset dir="${ppscran}/man">
+        <include name="*.Rd"/>
+      </fileset>
+
+      <filterchain>
+        <tokenfilter>
+          <replacestring from="_HTTP_PREFIX_"  to="${http.prefix}"/>
+          <replacestring from="_HTTP__PREFIX_" to="${https.prefix}"/>
+        </tokenfilter>
+      </filterchain>
+
+      <filterchain>
+        <tokenfilter>
+          <replacestring from="_PROJECT_PACKAGE_NAME_" to="${project.pkg.name}"/>
+          <replacestring from="_RFSRC_PACKAGE_NAME_" to="${rfsrc.pkg.name}"/>
+        </tokenfilter>
+      </filterchain>
+      
+    </copy>
+
+    <copy todir="${pptcran}/R">
+      <fileset dir="${ppscran}/R">
+        <include name="*.R"/>
+      </fileset>
+
+      <!-- This will target files that have version checks in them.  There
+           are none at present. -->
+      <filterchain>
+        <tokenfilter>
+          <replacestring from="_PROJECT_VERSION_" to="${project.version}"/>
+          <replacestring from="_MINIMUM_VERSION_" to="${minimum.version}"/>
+        </tokenfilter>
+      </filterchain>
+
+      <!-- This targets ${project.pkg.name}.news.R -->
+      <filterchain>
+        <tokenfilter>
+          <replacestring from="_PROJECT_PACKAGE_NAME_" to="${project.pkg.name}"/>
+          <replacestring from="_RFSRC_PACKAGE_NAME_"   to="${rfsrc.pkg.name}"/>
+        </tokenfilter>
+      </filterchain>
+      
+    </copy>
+
+  </target>
+  
+
+
+  <!--
+    ========================================================================
+      BUILD-CRAN target, Entry Point
+    ========================================================================
+  -->
+  <target name="build-cran" depends="os-prep, source-cran, build-cran-generic"/>
+ 
+  <!--
+    ========================================================================
+      Internal target, build-cran-generic
+    ========================================================================
+  -->
+
+  <target name="build-cran-generic">
+
+    <delete dir="target/cran/staged"/>
+    <mkdir dir="target/cran/staged"/>
+
+    <copy todir="target/cran/staged/${project.pkg.name}">
+      <fileset dir="target/cran/${project.pkg.name}"/> 
+    </copy>
+
+    <exec dir="target/cran/staged" executable="R" failonerror="TRUE">
+      <arg line="CMD check"/>
+      <arg line="${project.pkg.name}"/>
+    </exec>
+
+    <delete dir="target/cran/staged"/>
+    <mkdir dir="target/cran/staged"/>
+
+    <copy todir="target/cran/staged/${project.pkg.name}">
+      <fileset dir="target/cran/${project.pkg.name}"/> 
+    </copy>
+
+    <exec dir="target/cran/staged" executable="R" failonerror="TRUE">
+      <arg line="CMD BUILD"/>
+      <arg line="--resave-data"/>
+      <arg line="${project.pkg.name}"/>
+    </exec>
+
+    <copy file="target/cran/staged/${project.pkg.name}_${project.version}${cranArchive}" todir="target/cran"/>
+
+    <delete dir="target/cran/staged"/>
+    
+  </target>
+
+
+  <!--
+    ========================================================================
+      INSTALL-CRAN target, Entry Point
+    ========================================================================
+  -->
+  <target name="install-cran" depends="os-prep, source-cran, install-cran-generic"/>
+ 
+  <!--
+    ========================================================================
+      Internal target, install-cran-generic
+    ========================================================================
+  -->
+
+  <target name="install-cran-generic">
+
+    <delete dir="target/cran/staged"/>
+    <mkdir dir="target/cran/staged"/>
+
+    <copy todir="target/cran/staged/${project.pkg.name}">
+      <fileset dir="target/cran/${project.pkg.name}"/> 
+    </copy>
+
+    <exec dir="target/cran/staged" executable="R" failonerror="TRUE">
+      <arg line="CMD INSTALL"/>
+      <arg line="${project.pkg.name}"/>
+    </exec>
+
+    <delete dir="target/cran/staged"/>
+    
+  </target>
+
+
+  <!--
+    ========================================================================
+      CHECK-AS-CRAN target, Entry Point
+    ========================================================================
+  -->
+  <target name="check-as-cran" depends="os-prep, source-cran">
+
+    <delete dir="target/cran/staged"/>
+    <mkdir dir="target/cran/staged"/>
+
+    <copy todir="target/cran/staged/${project.pkg.name}">
+      <fileset dir="target/cran/${project.pkg.name}"/> 
+    </copy>
+
+    <exec dir="target/cran/staged" executable="R" failonerror="TRUE">
+      <arg line="CMD check"/>
+      <arg line="--as-cran"/>
+      <arg line="${project.pkg.name}"/>
+    </exec>
+
+  </target>    
+
+  <!--
+    ========================================================================
+      CHECK-TIMINGS-CRAN target, Entry Point
+    ========================================================================
+  -->
+  <target name="check-timings-cran" depends="os-prep, source-cran">
+
+    <delete dir="target/cran/staged"/>
+    <mkdir dir="target/cran/staged"/>
+
+    <copy todir="target/cran/staged/${project.pkg.name}">
+      <fileset dir="target/cran/${project.pkg.name}"/> 
+    </copy>
+
+    <exec dir="target/cran/staged" executable="R" failonerror="TRUE">
+      <arg line="CMD check"/>
+      <arg line="--timings"/>
+      <arg line="${project.pkg.name}"/>
+    </exec>
+
+  </target>    
+
+</project>

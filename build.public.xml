@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+
+<!--
+========================================================================
+  Public Level Project File
+========================================================================
+-->
+
+<project name="PUBLIC Build File" basedir="." default="usage" >
+
+  <property name="project.pkg.name"        value="@@PROJECT_PACKAGE_NAME@@"/>
+  <property name="rfsrc.pkg.name"          value="@@RFSRC_PACKAGE_NAME@@"/>
+  <property name="varpro.pkg.name"         value="@@VARPRO_PACKAGE_NAME@@"/>
+  <property name="project.version"         value="@@PROJECT_VERSION@@"/>
+  <property name="project.build"           value="@@PROJECT_BUILD@@"/>
+  <property name="minimum.version"         value="@@MINIMUM_VERSION@@"/>
+  
+  <property name="http.prefix"       value="http://"/>
+  <property name="https.prefix"      value="https://"/>
+
+  <property environment="env"/>
+  
+  <import  file="build.cran.xml"/>
+  <import  file="build.init.xml"/>
+
+
+  <!--
+    ========================================================================
+      Help on usage.  List available targets
+    ========================================================================
+    -->
+  <target name="usage" depends="init">
+    <echo message=""/>
+    <echo message=" Available targets are:"/>
+    <echo message=""/>
+    <echo message=" clean"/>
+    <echo message=" clean-cran"/>
+    <echo message="     --> delete the specific target directory"/>    
+    <echo message=""/>
+    <echo message=" source-cran"/>
+    <echo message="     --> create the CRAN source package"/>
+    <echo message=""/>
+    <echo message=" build-cran"/>
+    <echo message="     --> build the parallel CRAN package"/>
+    <echo message=""/>
+    <echo message=" install-cran"/>
+    <echo message="     --> install the parallel CRAN package"/>
+    <echo message=""/>
+  </target>
+  
+</project>

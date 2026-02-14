@@ -116,11 +116,13 @@ AppoxMatch <- function(x,y){
   }))
   return(out)
 }
+
+
 # Function to remove covariates with all elements of a column or a row missing
 RemoveMiss.Fun <- function(X){
   n <- nrow(X)
   WhichRow <- unlist(lapply(1:n,function(i){
-    temp.var <- X[i,]
+    temp.var <- X[i,,drop = FALSE]
     if(all(is.na(temp.var))){
       out <- "remove"
     }
@@ -131,11 +133,11 @@ RemoveMiss.Fun <- function(X){
   }))
   WhichRow.remove <- which(WhichRow == "remove")
   if(length(WhichRow.remove) > 0){
-    X <- X[-WhichRow.remove,]  
+    X <- X[-WhichRow.remove,,drop = FALSE]  
   }
   p <- ncol(X)
   WhichCol <- unlist(lapply(1:p,function(i){
-    temp.var <- X[,i]
+    temp.var <- X[,i,drop = FALSE]
     if(all(is.na(temp.var))){
       out <- "remove"
     }
@@ -146,10 +148,12 @@ RemoveMiss.Fun <- function(X){
   }))
   WhichCol.remove <- which(WhichCol == "remove")
   if(length(WhichCol.remove) > 0){
-    X <- X[,-WhichCol.remove]  
+    X <- X[,-WhichCol.remove,drop = FALSE]  
   }
   return(list(X = X,id.remove = if (length(WhichRow.remove) > 0) WhichRow.remove else NULL))
 }
+
+
 blup.solve <- function(transf.data, membership, sigma, Kmax) {
   lapply(1:Kmax, function(k) {
     pt.k <- (membership == k)
@@ -405,7 +409,7 @@ penBSderiv <- function(d, pen.ord = 2) {
     0
   }
 }
-plotProfileProximity <- function(obj, col = NULL, rnd.case = NULL, cut = .95, restrictX = TRUE) {
+plot.profile.prx <- function(obj, col = NULL, rnd.case = NULL, cut = .95, restrictX = TRUE) {
   if (is.null(obj$proximity)) {
     stop("this function requires proximity = TRUE in the predict call")
   }

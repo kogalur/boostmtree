@@ -61,9 +61,36 @@ boostmtree <- function(x,
   # Added the following if statement because binary/nominal/ordinal response
   # could be a factor or a character.
   #----------------------------------------------------------------------------------
-    if(!is.numeric(y)){
-      y <- as.numeric(factor(y))
+    if(!is.numeric(y))
+    {
+  #---------------------------------------------------------------------------------- 
+  # Date: 03/18/2021
+
+  # THIS IS REMAINED TO BE FIXED
+  # Ashley observed that for the binary response which is factor with levels 0 and 1,
+  # the final output has y converted to 1 and 2, and Yorg remain 0 and 1.
+  # We need to convert y to 0 and 1.
+
+  # Date: 05/10/2023
+  # Hopefully, this is now resolved; try this later
+  #----------------------------------------------------------------------------------
+
+      if(is.factor(y))
+      {
+        y <- as.numeric(levels(y))[y]
+      }
+
+      if(is.character(y))
+      {
+        y <- as.numeric(y)
+      }
+
+      if(is.logical(y))
+      {
+        y <- as.numeric(y)
+      }
     }
+
     y.unq <- sort(unique(y))
     Q   <- length(y.unq)
     if(family == "Nominal"){
@@ -120,7 +147,7 @@ boostmtree <- function(x,
     RemoveMiss.Obj <- RemoveMiss.Fun(X)
     X <- RemoveMiss.Obj$X
     id_all_na <- RemoveMiss.Obj$id.remove
-    id_any_na <- which(unlist(lapply(1:nrow(X),function(i){ any(is.na(X[i,])) } )))
+    id_any_na <- which(unlist(lapply(1:nrow(X),function(i){ any(is.na(X[i,,drop = FALSE])) } )))
     if(na.action == "na.omit"){
       id_na <- id_any_na
     } else
@@ -632,7 +659,17 @@ for(q in 1:n.Q) {
           else {
             Ynew <- V.inv.sqrt %*% (Y[[q]][[i]] - mu[[q]][[i]])
           }
-            mu.2 <- GetMu_Lambda(Linear_Predictor = 2*l_pred[[q]][[i]],Family = family)
+            #----------------------------------------------------------------------------------
+            # Date: 05/11/2023
+
+            # While working on binary boostMRL case, I realized that for the Taylor expansion,
+            # I shouldn't multiply by 2. This is because the correct Taylor series expansion of
+            # g^{-1}(a + h) = g^{-1}(a) + d/dh g^{-1}(x) |_{x = a} h; where x = h + a. However, by mistake, I used
+            # g^{-1}(a + h) = g^{-1}(a) + d/dh g^{-1}(x) |_{h = a} . Thus, after the evaluation,
+            # when ideally I should have x = a, I got x = h + a = a + a = 2a. This can be resolved
+            # by removing 2 from the expression of Linear_Predictor below; removing it now.
+            #---------------------------------------------------------------------------------- 
+            mu.2 <- GetMu_Lambda(Linear_Predictor = l_pred[[q]][[i]],Family = family)
             LambdaD <- Transform_H(mu.2,Family = family)%*%D[[i]]
             Xnew <- V.inv.sqrt %*% LambdaD[, 1, drop = FALSE]
             Znew <- V.inv.sqrt %*% LambdaD[, -1, drop = FALSE] %*% pen.inv.sqrt.matx

@@ -37,6 +37,7 @@ vimp.boostmtree <- function(object,x.names = NULL,joint = FALSE){
   Ysd <- object$ysd
   df.D <- ncol(object$X.tm)
   Mopt <- object$Mopt
+  M <- object$M
   ni <- object$ni
   K <- object$K
   n.Q <- object$n.Q

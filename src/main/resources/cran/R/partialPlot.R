@@ -12,7 +12,7 @@ partialPlot <- function (object,
                          Variable_Factor = FALSE,
                          path_saveplot = NULL,
                          Verbose = TRUE,
-                         useCVflag = FALSE,
+                         useCVflag = NULL,
                          ...)
 {
   if (sum(inherits(object, c("boostmtree", "grow"), TRUE) == c(1, 2)) != 2) {
@@ -57,7 +57,7 @@ partialPlot <- function (object,
       M <- object$M
     }else
     {
-      M <- object$Mopt
+      M <- max(object$Mopt,na.rm = TRUE)
     }
   }
   
@@ -69,6 +69,11 @@ partialPlot <- function (object,
   # How the subset should be handled in the case of useCVflag == TRUE?
   #----------------------------------------------------------------------------------
   
+  if(is.null(useCVflag))
+  {
+    useCVflag <- object$cv.flag
+  }
+
   if (!missing(subset)) {
     object$x <- object$x[subset,, drop = FALSE]
   }
@@ -115,9 +120,16 @@ partialPlot <- function (object,
     
   p.obj[[q]] <- lapply(xvar.names, function(nm) {
     x <- object$x[, nm]
-    n.x <-length( unique(na.omit(x) ))
+    if(Variable_Factor)
+    {
+      x <- as.numeric(levels(x))[x]
+    }
+    n.x <- length( unique(na.omit(x) ))
+    if(n.x == 0){
+      stop("No unique values of xvar.names are observed")
+    }
     if(is.null(xvar.unq)){
-      x.unq <- sort(unique( na.omit(x) ))[unique(as.integer(seq(1, n.x, length = min(npts, n.x))))] 
+      x.unq <- sort(unique( na.omit(x) ))[unique(as.integer(seq(1, n.x, length = min(npts, n.x))))]  
     }else
     {
       if(!is.list(xvar.unq)){
@@ -149,7 +161,17 @@ partialPlot <- function (object,
         }        
       }
       mn.x <- colMeans(do.call(rbind, lapply(mu, function(mm) {mm[tm.pt]})),na.rm = TRUE)
-      c(xu, mn.x)
+
+  #----------------------------------------------------------------------------------
+  # Date: 03/09/2021
+
+  # Ashley brought up an issue that if variable is factor in the boost fit object
+  # which takes a values, say 0 and 1. Then, in c(xu, mn.x), the values gets converted
+  # to numeric which are 1 and 2. This happens even when we use the argument Variable_Factor = TRUE  
+  
+  # AT THIS STAGE, THIS IS NOT YET ADDRESSED
+  #----------------------------------------------------------------------------------
+        c(xu, mn.x)
     }))
     colnames(rObj) <- c("x", paste("y.", 1:length(tm.pt), sep = ""))
     rObj

@@ -1,0 +1,142 @@
+<?xml version="1.0"?>
+
+<project name="INIT Build File" basedir="." default="usage">
+
+  <!--
+    ========================================================================
+      Internal Target:  INIT
+    ========================================================================
+  -->
+  <target name="init">
+    <tstamp>
+      <format property="DSTAMP" pattern="yyyy-MM-dd"/>
+      <format property="TSTAMP" pattern="hh:mm:ss"/>
+    </tstamp>
+
+    <echo message="--------- ${project.pkg.name} ---------"/>
+    <echo message=""/>
+    <echo message="Version:     ${project.version}"/>
+    <echo message="Build:       ${project.build}"/>
+    <echo message=""/>
+    <echo message="  Date:      ${DSTAMP}"/>
+    <echo message="  Time:      ${TSTAMP}"/>
+
+    <echo message=""/>
+    <echo message="Platform Details:"/>
+    <echo message="  OS name    ${os.name}"/>
+    <echo message="  OS version ${os.version}"/>
+    <echo message="  OS arch    ${os.arch}"/>
+    <echo message="  Java arch  ${sun.arch.data.model}"/>
+  </target>
+
+
+  <!--
+    ========================================================================
+      Internal Targets:  Customization for Operating System
+    ========================================================================
+  -->
+
+  <target name="os-prep" depends="checkOS, win-prep, unix-prep, mac-intel-prep, mac-silicon-prep"/> 
+
+  <target name="win-prep" if="is-win">
+
+    <property name="sep" value="\"/>
+    <property name="scriptExtension" value=".cmd"/>
+    <property name="scriptFileCommentLine" value="@echo off"/>
+    <property name="scriptFileExitLine" value="exit /b"/>
+    <property name="sharedObjectExtension" value=".dll"/>
+
+    <property name="Rlib" value="x64"/>
+    <property name="gnuCC" value="gcc"/>
+
+    <property name="cranArchive" value=".zip"/>
+
+    <echo message="Customization for Windows"/>
+  </target>
+
+  <target name="unix-prep" if="is-unix">
+
+    <property name="sep" value="/"/>
+    <property name="scriptExtension" value=".sh"/>
+    <property name="scriptFileCommentLine" value="#!/bin/bash"/>
+    <property name="scriptFileExitLine" value="exit 0"/>
+    <property name="cranArchive" value="_R_x86_64-pc-linux-gnu.tar.gz"/>
+
+    <property name="Rlib" value="x86_64"/>
+    <property name="gnuCC" value="${env.GCC_HOMEBREW}"/>
+
+    <echo message="Customization for Linux"/>
+  </target>
+
+  <target name="mac-intel-prep" if="is-mac-intel">
+
+    <property name="sep" value="/"/>
+    <property name="scriptExtension" value=".sh"/>
+    <property name="scriptFileCommentLine" value="#!/bin/bash"/>
+    <property name="scriptFileExitLine" value="exit 0"/>
+    <property name="sharedObjectExtension" value=".dylib"/>
+
+    <property name="Rlib" value="x86_64"/>
+    <property name="gnuCC" value="${env.GCC_HOMEBREW}"/>
+
+    <property name="cranArchive" value=".tar.gz"/>
+
+    <echo message="Customization for Mac OS (Intel)"/>
+  </target>
+
+  <target name="mac-silicon-prep" if="is-mac-silicon">
+
+    <property name="sep" value="/"/>
+    <property name="scriptExtension" value=".sh"/>
+    <property name="scriptFileCommentLine" value="#!/bin/bash"/>
+    <property name="scriptFileExitLine" value="exit 0"/>
+    <property name="sharedObjectExtension" value=".dylib"/>
+
+    <property name="Rlib" value="aarch64"/>
+    <property name="gnuCC" value="${env.GCC_HOMEBREW}"/>
+    
+    <property name="cranArchive" value=".tar.gz"/>
+
+    <echo message="Customization for Mac OS (Silicon)"/>
+  </target>
+  
+  <target name="checkOS">
+    <condition property="is-win">
+        <os family="windows"/>
+    </condition>
+    <condition property="is-unix">
+      <and>
+        <os name="Linux"/>
+      </and>
+    </condition>
+    <condition property="is-mac-intel">
+      <and>
+        <os name="Mac OS X"/>
+        <os arch="x86_64"/>
+      </and>
+    </condition>
+    <condition property="is-mac-silicon">
+      <and>
+        <os name="Mac OS X"/>
+        <os arch="aarch64"/>
+      </and>
+    </condition>
+  </target>
+
+
+  <!--
+    ========================================================================
+      CLEAN targets, Entry Point
+    ========================================================================
+  -->
+  <target name="clean" depends="init, clean-cran">
+    <delete dir="target"/>
+  </target>
+  <target name="clean-cran" depends="init">
+    <delete dir="target/cran"/>
+  </target>
+
+
+</project>
+  
+  

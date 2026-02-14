@@ -229,6 +229,10 @@
   Blackstone E.H., Ishwaran H. (2017).  Boosted multivariate trees for
   longitudinal data, \emph{Machine Learning}, 106(2): 277--305.
 
+  Pande, A., Ishwaran, H., Blackstone, E. et al. 
+  Application of Gradient Boosting in Evaluating Surgical Ablation for Atrial Fibrillation. 
+  SN COMPUT. SCI. 3, 466 (2022). https://doi.org/10.1007/s42979-022-01350-3
+
   Pande A. (2017).  \emph{Boosting for longitudinal data}.  Ph.D. Dissertation,
   Miller School of Medicine, University of Miami.
 }
@@ -258,6 +262,7 @@ print(boost.grow)
 #plot.results
 plot(boost.grow)
 
+\dontrun{
 ##------------------------------------------------------------
 ## synthetic example (Response y is binary)
 ## 0.8 correlation, quadratic time with quadratic interaction
@@ -274,7 +279,6 @@ print(boost.grow)
 #plot.results
 plot(boost.grow)
 
-\dontrun{
 ##------------------------------------------------------------
 ## Same synthetic example as above with continuous response
 ## but with in-sample cross-validation estimate for RMSE
