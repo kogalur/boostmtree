@@ -162,8 +162,8 @@
   <target name="source-secret" depends="init">
     <zip destfile="../${project.pkg.name}.${project.build}.zip"
          basedir="../"
-         includes="${project.name}-secret/**"
-         excludes="${project.name}-secret/target/"/>
+         includes="${project.name}/**"
+         excludes="${project.name}/target/"/>
   </target>
 
   <!--
