@@ -84,6 +84,13 @@
     -->
 
 
+    <copy todir="${pptcran}/data">
+      <fileset dir="${ppscran}/data">
+        <include name="*.rda"/>
+        <include name="*.RData"/>
+      </fileset>
+    </copy>    
+
     <copy todir="${pptcran}/man">
       <fileset dir="${ppscran}/man">
         <include name="*.Rd"/>

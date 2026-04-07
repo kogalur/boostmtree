@@ -1,6 +1,6 @@
 Package: _PROJECT_PACKAGE_NAME_
-Version: _PROJECT_VERSION_ID_
-BUILD: _PROJECT_BUILD_ID_
+Version: _PROJECT_VERSION_
+BUILD: _PROJECT_BUILD_
 
 ---------------------------------------------------------------------------------
 CHANGES TO RELEASE _PROJECT_VERSION_ID_
