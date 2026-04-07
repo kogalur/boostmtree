@@ -1,116 +1,68 @@
-print.boostmtree <- function (x, ...)
-{
-  if (sum(inherits(x, c("boostmtree", "grow"), TRUE) == c(1, 2)) != 2 &
-      sum(inherits(x, c("boostmtree", "predict"), TRUE) == c(1, 2)) != 2) {
-    stop("this function only works for objects of class `(boostmtree, grow)' or '(boostmtree, predict)'")
+print.boostmtree <- function(x, ...) {
+  display <- boostmtree.resolve.display.object(x)
+  model <- display$model
+  univariate <- isTRUE(model$univariate)
+
+  cat("model                       :", class(model)[3], "\n")
+  cat("fitting mode                :", display$kind, "\n")
+  cat("family                      :", model$family, "\n")
+
+  if (model$family %in% c("binary", "nominal", "ordinal")) {
+    cat("number of levels            :", model$q.total, "\n")
   }
-  if (sum(inherits(x, c("boostmtree", "grow"), TRUE) == c(1, 2)) == 2) {
-    univariate <- length(x$id) == length(unique(x$id))
-    cat("model                       :", class(x)[3], "\n")
-    cat("fitting mode                :", class(x)[2], "\n")
-    cat("Family                      :", x$family, "\n")
-    n_levels <- (x$n.Q+1)
-    if(x$family == "Nominal" || x$family == "Ordinal"){
-    cat("No of levels                :",n_levels, "\n")  
-    }
-    if (x$ntree > 1) {
-      cat("ntree                     :", x$ntree, "\n")
-    }
-    cat("number of K-terminal nodes  :", x$K, "\n")
-    cat("regularization parameter    :", x$nu[1], "\n")
-    cat("sample size                 :", nrow(x$x), "\n")
-    cat("number of variables         :", ncol(x$x), "\n")
-    if (!univariate) {
-      cat("number of unique time points:", length(sort(unique(unlist(x$time)))), "\n")
-      cat("avg. number of time points  :", round(mean(sapply(x$time, length), na.rm = TRUE), 2), "\n")
-      cat("B-spline dimension          :", ncol(x$X.tm), "\n")
-      cat("penalization order          :", x$pen.ord, "\n")
-    }
-    else {
-      cat("univariate family           :", TRUE, "\n")
-    }
-    cat("boosting iterations         :", x$M, "\n")
-    if (!is.null(x$err.rate)) {
-      if( x$family == "Nominal" || x$family == "Ordinal" ){
-       n.Q <- x$n.Q 
-      } else
-      {
-        n.Q <- 1
-      }
-      optimized_rho <- unlist(lapply(1:n.Q,function(q){
-        if(x$family == "Nominal" || x$family == "Ordinal"){
-            x$rho[x$Mopt[q],q]
-        }else
-        {
-          x$rho[ x$Mopt[q] ]
-        }
-      }))
-      optimized_phi <- unlist(lapply(1:n.Q,function(q){
-        if(x$family == "Nominal" || x$family == "Ordinal"){
-           x$phi[x$Mopt[q],q]
-        }else
-        {
-          x$phi[ x$Mopt[q] ]
-        }
-      }))
-      cat("optimized number iterations :", x$Mopt, "\n")      
-      if (!univariate) {
-        cat("optimized rho               :", round(optimized_rho, 4),  "\n")
-        cat("optimized phi               :", round(optimized_phi, 4),  "\n")
-      }
-        cat("OOB cv RMSE                 :", round(x$rmse, 4), "\n")
-    }
+
+  if (!is.null(model$ntree) && model$ntree > 1L) {
+    cat("ntree                       :", model$ntree, "\n")
   }
-  else {
-    univariate <- length(x$boost.obj$id) == length(unique(x$boost.obj$id))
-    cat("model                       :", class(x)[3], "\n")
-    cat("fitting mode                :", class(x)[2], "\n")
-    cat("Family                      :", x$family, "\n")
-    n_levels <- (x$n.Q+1)
-    if(x$family == "Nominal" || x$family == "Ordinal"){
-      cat("No of levels                :",n_levels, "\n")  
-    }
-    cat("sample size                 :", nrow(x$x), "\n")
-    cat("number of variables         :", ncol(x$x), "\n")
-    if (!univariate) {
-      cat("number of unique time points:", length(sort(unique(unlist(x$time)))), "\n")
-      cat("avg. number of time points  :", round(mean(sapply(x$time, length), na.rm = TRUE), 2), "\n")
-      if (!is.null(x$err.rate)) {
-        
-        if(x$family == "Nominal" || x$family == "Ordinal"){
-          n.Q <- x$n.Q 
-        } else
-        {
-          n.Q <- 1
-        }
-        optimized_rho <- unlist(lapply(1:n.Q,function(q){
-          if(x$family == "Nominal" || x$family == "Ordinal"){
-             x$boost.obj$rho[x$Mopt[q],q]
-          }else
-          {
-            x$boost.obj$rho[ x$Mopt[q] ]
-          }         
-        }))
-        optimized_phi <- unlist(lapply(1:n.Q,function(q){
-          if(x$family == "Nominal" || x$family == "Ordinal"){
-             x$boost.obj$phi[x$Mopt[q],q]
-          }else
-          {
-            x$boost.obj$phi[ x$Mopt[q] ]
-          }          
-        }))
-        cat("optimized number iterations :", x$Mopt, "\n")
-        cat("optimized rho               :", round(optimized_rho, 4),  "\n")
-        cat("optimized phi               :", round(optimized_phi, 4),  "\n")
-        cat("test set RMSE               :", round(x$rmse, 4), "\n")
-      }
-    }
-    else {
-      if (!is.null(x$err.rate)) {
-        cat("optimized number iterations :", x$Mopt, "\n")
-        cat("test set RMSE               :", round(x$rmse, 4), "\n")
-      }
-      cat("univariate family           :", TRUE, "\n")
-    }
+
+  cat("number of terminal nodes    :", model$k, "\n")
+  cat("regularization parameter    :", model$nu[1], "\n")
+  cat("sample size                 :", nrow(display$x), "\n")
+  cat("number of variables         :", ncol(display$x), "\n")
+
+  if (!univariate) {
+    cat("number of unique time points:", length(model$time.unique), "\n")
+    cat("avg. number of time points  :", round(mean(vapply(display$time, length, integer(1))), 2), "\n")
+    cat("B-spline dimension          :", ncol(model$x.tm), "\n")
+    cat("penalization order          :", model$pen.ord, "\n")
+  } else {
+    cat("univariate family           :", TRUE, "\n")
   }
+
+  cat("boosting iterations         :", model$M, "\n")
+
+  if (!is.null(display$err.rate) && !is.null(display$m.opt)) {
+    optimized.rho <- if (!is.null(model$rho) && !is.null(display$m.opt)) {
+      vapply(seq_len(model$n.q), function(q) {
+        if (is.matrix(model$rho)) model$rho[display$m.opt[q], q] else model$rho[display$m.opt[q]]
+      }, numeric(1))
+    } else {
+      NULL
+    }
+
+    optimized.phi <- if (!is.null(model$phi) && !is.null(display$m.opt)) {
+      vapply(seq_len(model$n.q), function(q) {
+        if (is.matrix(model$phi)) model$phi[display$m.opt[q], q] else model$phi[display$m.opt[q]]
+      }, numeric(1))
+    } else {
+      NULL
+    }
+
+    cat("optimized number iterations :", display$m.opt, "\n")
+    if (!univariate && !is.null(optimized.rho)) {
+      cat("optimized rho               :", round(optimized.rho, 4), "\n")
+    }
+    if (!univariate && !is.null(optimized.phi)) {
+      cat("optimized phi               :", round(optimized.phi, 4), "\n")
+    }
+
+    metric.label <- if (identical(display$kind, "grow")) {
+      "OOB cv RMSE"
+    } else {
+      "test set RMSE"
+    }
+    cat(sprintf("%-28s:", metric.label), round(display$rmse, 4), "\n")
+  }
+
+  invisible(x)
 }

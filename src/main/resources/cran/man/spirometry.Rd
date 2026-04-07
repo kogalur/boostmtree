@@ -3,15 +3,16 @@
 \alias{spirometry}
 \title{Spirometry Data}
 \description{
-    Data consists of 9471 longitudinal evaluations of forced 1-second
-    expiratory volume (FEV1-percentage of predicted) after lung
-    transplant from 509 patients who underwent lung transplant (LTx) at
-    the Cleveland Clinic.  Twenty three patient/procedure variables were
-    collected at the time of the transplant.  The major objectives are
-    to evaluate the temporal trend of FEV1 after LTx, and to identify
-    factors associated with post-LTx FEV1 and assessing the differences
-    in the trends after Single LTx versus Double LTx. 
+Lung transplant data from 509 patients who underwent lung transplantation
+(LTx) at the Cleveland Clinic, comprising 9,471 longitudinal measurements
+of forced expiratory volume in one second (FEV1, expressed as a percentage
+of predicted). Twenty-three patient and procedure variables were recorded at
+the time of transplant. The primary objectives are to evaluate the temporal
+trend of FEV1 following LTx, to identify factors associated with post-LTx
+FEV1, and to assess differences in trajectories between single and double
+LTx procedures.
 }
+
 \format{
   A list containing four elements:
   \enumerate{
@@ -27,5 +28,7 @@
   survival after lung transplantation. \emph{J. Thorac. Cardiovasc. Surg.},
   144:197-203, 2012.
 }
-\examples{data(spirometry, package = "_PROJECT_PACKAGE_NAME_")}
+
+\examples{data(spirometry, package = "boostmtree")}
+
 \keyword{datasets}

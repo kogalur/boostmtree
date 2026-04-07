@@ -90,8 +90,8 @@
 
 
     <copy file="${dscran}/NAMESPACE" tofile="${ptcran}/NAMESPACE"> </copy>
-
     <copy file="${dscran}/DESCRIPTION" tofile="${ptcran}/DESCRIPTION"> </copy>
+    <copy file="${dscran}/NEWS.md" tofile="${ptcran}/NEWS.md"> </copy>
 
     <copy todir="${ptcran}/inst">
       <fileset dir="${dscran}/inst">
@@ -270,8 +270,8 @@
     
     <echo message=" Available development clean targets (USE WITH CAUTION):"/>
     <echo message=""/>
-    <echo message=" clean-test"/>
-    <echo message="     --> delete the test directory"/>    
+    <echo message=" clean"/>
+    <echo message="     --> delete the target directory"/>    
     <echo message=""/>
     <echo message=" clean-quality"/>
     <echo message="     --> delete the test/quality directory"/>    

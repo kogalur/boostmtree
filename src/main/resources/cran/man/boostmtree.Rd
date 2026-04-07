@@ -1,340 +1,632 @@
 \name{boostmtree}
 \alias{boostmtree}
-\alias{boostmtree}
 \title{Boosted multivariate trees for longitudinal data}
+
 \description{
-  Multivariate extension of Friedman's gradient descent boosting method
-  for modeling continuous or binary longitudinal response using 
-  multivariate tree base learners (Pande et
-  al., 2017).  Covariate-time interactions are modeled using penalized
-  B-splines (P-splines) with estimated adaptive smoothing parameter.
+
+Fit multivariate boosted tree models for repeated-measures outcomes. The
+method combines gradient boosting, subject-level tree partitioning, and
+smooth time effects to estimate subject-specific mean trajectories or
+class probabilities over time.  Supports continuous, binary, nominal,
+and ordinal longitudinal data, as well as univariate responses.
+
 }
+
 \usage{
- boostmtree(x,
-            tm,
-            id,
-            y,
-            family = c("Continuous","Binary","Nominal","Ordinal"),
-            y_reference = NULL,
-            M = 200,
-            nu = 0.05,
-            na.action = c("na.omit","na.impute")[2],
-            K = 5,
-            mtry = NULL,
-            nknots = 10,
-            d = 3,
-            pen.ord = 3,
-            lambda,
-            rho,
-            lambda.max = 1e6,
-            lambda.iter = 2,
-            svd.tol = 1e-6,
-            forest.tol = 1e-3,
-            verbose = TRUE,
-            cv.flag = FALSE,
-            eps = 1e-5,
-            mod.grad = TRUE,
-            NR.iter = 3,
-            ...)
+boostmtree(
+  x,
+  tm = NULL,
+  id = NULL,
+  y,
+  family = c("continuous", "binary", "nominal", "ordinal"),
+  y.reference = NULL,
+  M = 200,
+  nu = 0.05,
+  na.action = c("na.omit", "na.impute")[2],
+  k = 5,
+  mtry = NULL,
+  n.knots = 10,
+  d = 3,
+  pen.ord = 3,
+  lambda = NULL,
+  rho = NULL,
+  lambda.max = 1e6,
+  lambda.iter = 2,
+  svd.tol = 1e-6,
+  verbose = TRUE,
+  cv.flag = FALSE,
+  eps = 1e-5,
+  mod.grad = TRUE,
+  nr.iter = 3,
+  control = boostmtree.control()
+)
 }
+
 \arguments{
-    \item{x}{Data frame (or matrix) containing the x-values.   Rows
-      must be duplicated to match the number of time points for an individual.
-      That is, if individual \emph{i} has \emph{n[i]} outcome y-values,
-      then there must be \emph{n[i]} duplicate rows of \emph{i}'s x-value.}
-    \item{tm}{Vector of time values, one entry for each row in \code{x}.}
-    \item{id}{Unique subject identifier, one entry for each row in \code{x}.}
-    \item{y}{Observed y-value, one entry for each row in \code{x}.}
-    \item{family}{Family of the response variable \code{y}. Use any one 
-    from \{"Continuous", "Binary","Nominal","Ordinal"\} based on the scale of \code{y}.}
-    \item{y_reference}{Set this value, among the unique \code{y} values 
-    when \code{family} == "Nominal". If NULL, lowest value, among unique \code{y} values, is used.}
-    \item{M}{Number of boosting iterations}
-    \item{nu}{Boosting regularization parameter.  A value in (0,1].}
-    \item{na.action}{Remove missing values (casewise) or impute it. Default is to impute the missign values.}
-    \item{K}{Number of terminal nodes used for the multivariate tree learner.}
-    \item{mtry}{Number of \code{x} variables selected randomly for tree fitting. Default is use all \code{x} variables.}
-    \item{nknots}{Number of knots used for the B-spline for modeling the
-    time interaction effect.}
-    \item{d}{Degree of the piecewise B-spline polynomial (no time
-      effect is fit when d < 1).}
-    \item{pen.ord}{Differencing order used to define the penalty with
-      increasing values implying greater smoothness.}
-    \item{lambda}{Smoothing (penalty) parameter used for B-splines with
-      increasing values associated with increasing
-      smoothness/penalization. If missing, or non-positive, the value is
-      estimated adaptively using a mixed models approach.}
-    \item{rho}{If missing, rho is estimated, else, use the \code{rho} value specified in this argument.}
-    \item{lambda.max}{Tolerance used for adaptively estimated lambda
-      (caps it).  For experts only.}
-    \item{lambda.iter}{Number of iterations used to estimate lambda
-      (only applies when lambda is not supplied and adaptive smoothing
-      is employed).}
-    \item{svd.tol}{Tolerance value used in the SVD calculation of the
-      penalty matrix.  For experts only.}
-    \item{forest.tol}{Tolerance used for forest weighted least squares
-      solution.  Experimental and for experts only.}
-    \item{verbose}{Should verbose output be printed?}
-    \item{cv.flag}{Should in-sample cross-validation (CV) be used to determine
-      optimal stopping using out of bag data?}
-     \item{eps}{Tolerance value used for determining the optimal
-       \code{M}. Applies only if \command{cv.flag} = TRUE.  For experts only.}
-    \item{mod.grad}{Use a modified gradient? See details below.}
-    \item{NR.iter}{Number of Newton-Raphson iteration. Applied 
-    for \command{family} = \{Binary","Nominal","Ordinal"\}.}
-    \item{...}{Further arguments passed to or from other methods.}
+  
+  \item{x}{A data frame or matrix of covariates. For longitudinal fitting,
+  rows must be repeated so that the covariate row for subject \eqn{i} appears
+  once for each observation time recorded for that subject.}
+
+  \item{tm}{A vector of observation times with one entry per row of \code{x}.
+  If \code{tm} and \code{id} are both omitted, the function switches to
+  univariate mode and treats each row of \code{x} as a single observation.}
+
+  \item{id}{A subject identifier with one entry per row of \code{x}. Must be
+  supplied whenever \code{tm} is supplied.}
+
+  \item{y}{Observed responses with one entry per row of \code{x}.}
+
+  \item{family}{Response type. Choose one of \code{"continuous"},
+  \code{"binary"}, \code{"nominal"}, or \code{"ordinal"}.}
+
+  \item{y.reference}{Reference level used when \code{family = "nominal"}.
+  If \code{NULL}, the first observed response level is used. Ignored for the
+  other families.}
+
+  \item{M}{Number of boosting iterations. Larger values allow a more flexible
+  fit, while \code{cv.flag = TRUE} can be used to select a stopping iteration
+  automatically.}
+
+  \item{nu}{Boosting step size. Supply either a scalar or a length-two vector.
+  The first element is used for the intercept part of the time basis and the
+  second for the remaining time-basis coefficients. All values must lie in
+  \eqn{(0, 1]}. Smaller values generally require larger \code{M}.}
+
+  \item{na.action}{How to handle missing values in the covariates \code{x}.
+  Use \code{"na.omit"} to remove subjects with incomplete covariates, or
+  \code{"na.impute"} to keep subjects unless all covariates are missing.
+  Missing values in \code{tm}, \code{id}, or \code{y} are not allowed.}
+
+  \item{k}{Requested number of terminal nodes in the tree base learner.}
+
+  \item{mtry}{Number of candidate covariates sampled at each split. If
+  \code{NULL}, all covariates are considered.}
+
+  \item{n.knots}{Number of internal knots used for the B-spline time basis.}
+
+  \item{d}{Degree of the B-spline basis. Values smaller than 1 remove the
+  smooth time component and leave an intercept-only time design.}
+
+  \item{pen.ord}{Differencing order used in the P-spline penalty. Larger
+  values encourage smoother time profiles.}
+
+  \item{lambda}{Smoothing parameter for the time-basis penalty. If
+  \code{NULL}, the function estimates \code{lambda} adaptively when the time
+  basis has sufficient degrees of freedom. A scalar is recycled across
+  subproblems; otherwise the supplied vector must have length \code{n.q}.}
+
+  \item{rho}{Working within-subject correlation parameter. If \code{NULL}, it
+  is updated during fitting. A scalar is recycled across subproblems;
+  otherwise the supplied vector must have length \code{n.q}.}
+
+  \item{lambda.max}{Upper bound used during adaptive estimation of
+  \code{lambda}.}
+
+  \item{lambda.iter}{Number of updates used when \code{lambda} is estimated
+  adaptively.}
+
+  \item{svd.tol}{Tolerance used in the singular-value decomposition of the
+  penalty matrix.}
+
+  \item{verbose}{Logical; should progress output be printed?}
+
+ \item{cv.flag}{Logical; should out-of-bag cross-validation be tracked to
+  select an optimal stopping iteration? When \code{cv.flag = TRUE}, the fit
+  must have out-of-bag subjects at each boosting iteration. The default control
+  setting \code{control = boostmtree.control()} already provides this through
+  \code{bootstrap = "by.root"}. If a no-OOB scheme such as
+  \code{bootstrap = "none"} is requested, \code{boostmtree()} switches back
+  to \code{"by.root"} with a warning.}
+
+  \item{eps}{Tolerance used when selecting the stopping iteration from the
+  cross-validation error path.}
+
+  \item{mod.grad}{Logical; controls the pseudo-response used to grow
+    each tree base learner.  During tree growing, the working gradient
+    is first computed for each subject and then passed to \code{rfsrc()}
+    as the multivariate pseudo-response used to determine tree splits.
+    If \code{mod.grad = FALSE}, the inverse of the current working
+    covariance matrix is used to compute the gradient, otherwise the
+    inverse covariance factor is omitted.  Operationally,
+    \code{mod.grad} changes how candidate splits are evaluated, but it
+    does \emph{not} remove covariance weighting from the later
+    terminal-node coefficient update. After the tree structure has been
+    chosen, the node-specific coefficient estimates are still obtained
+    from score and Hessian updates that use the inverse working
+    covariance matrix.}
+
+  \item{nr.iter}{Number of Newton--Raphson updates used inside the terminal
+  node coefficient solver for non-continuous families.}
+
+  \item{control}{A control object created by \code{boostmtree.control()}.}
+
 }
+
 \details{
+\code{boostmtree()} is designed for longitudinal data in which subject
+\eqn{i} is measured at times \eqn{t_{ij}} and is described by a baseline
+covariate vector \eqn{x_i}. The goal is to estimate how the conditional mean
+response changes over time and across subjects with different covariate
+profiles.
 
-  Each individual has observed y-values, over possibly different time
-  points, with possibly differing number of time points.  Given y, the
-  time points, and x, the conditional mean time profile of y is
-  estimated using gradient boosting in which the gradient is derived
-  from a criterion function involving a working variance matrix for y
-  specified as an equicorrelation matrix with parameter \emph{rho}
-  multiplied by a variance parameter \emph{phi}. Multivariate trees are
-  used for base learners and weighted least squares is used for solving
-  the terminal node optimization problem.  This provides solutions to
-  the core parameters of the algorithm.  For ancillary parameters, a
-  mixed-model formulation is used to estimate the smoothing parameter
-  associated with the B-splines used for the time-interaction effect,
-  although the user can manually set the smoothing parameter as well.
-  Ancillary parameters \emph{rho} and \emph{phi} are estimated using GLS
-  (generalized least squares).
+At a high level, the method combines three ideas.
 
-  In the original boostmtree algorithm (Pande et al., 2017), the
-  equicorrelation parameter \emph{rho} is used in two places in the
-  algorithm: (1) for growing trees using the gradient, which depends
-  upon \emph{rho}; and (2) for solving the terminal node optimization
-  problem which also uses the gradient.  However, Pande (2017) observed
-  that setting \emph{rho} to zero in the gradient used for growing trees
-  improved performance of the algorithm, especially in high dimensions.
-  For this reason the default setting used in this algorithm is to set
-  \emph{rho} to zero in the gradient for (1).  The \code{rho} in the
-  gradient for (2) is not touched.  The option \code{mod.grad} specifies
-  whether a modified gradient is used in the tree growing process and is
-  TRUE by default.
+First, it uses \emph{gradient boosting}. Starting from an initial fit, the
+algorithm repeatedly adds small updates in the direction that improves the fit.
+If \eqn{\eta_i(t)} denotes the current linear predictor, then boosting updates
+it according to
+\deqn{\eta_i^{(m)}(t) = \eta_i^{(m-1)}(t) + \nu b_m(x_i, t),}
+where \eqn{b_m} is the base learner fitted at iteration \eqn{m} and
+\eqn{\nu} is the step size.
 
-  By default, trees are grown from a bootstrap sample of the data --
-  thus the boosting method employed here is a modified example of
-  stochastic gradient descent boosting (Friedman, 2002).  Stochastic
-  descent often improves performance and has the added advantage that
-  out-of-sample data (out-of-bag, OOB) can be used to calculate
-  variable importance (VIMP).
+Second, the base learner is a \emph{multivariate tree}. The tree partitions
+subjects into terminal nodes based on their covariates. Within each terminal
+node, the time profile is represented by coefficients of a smooth basis in
+time. In this way the model can capture nonlinear covariate effects,
+interactions, and different trajectory shapes for different groups of
+subjects.
 
-   The package implements R-side parallel processing by replacing
-  the R function \command{lapply} with \command{mclapply} found in the
-  \pkg{parallel} package.  You can set the number of cores accessed by
-  \command{mclapply} by issuing the command \command{options(mc.cores =
-    x)}, where \command{x} is the number of cores.  The options command
-  can also be placed in the users .Rprofile file for convenience.  You
-  can, alternatively, initialize the environment variable
-  \command{MC_CORES} in your shell environment.
+Third, the time effect is modeled by a \emph{penalized B-spline}. When
+\code{d >= 1}, the observed times are expanded into a spline basis and the
+terminal-node coefficients for that basis are penalized to avoid unstable or
+overly wiggly trajectories. The smoothing parameter \code{lambda} controls the
+strength of that penalty. If \code{lambda} is not supplied, the function can
+estimate it adaptively.
 
-  As an example, issuing the following options command uses all
-  available cores for R-side parallel processing:
-
-  \command{options(mc.cores=detectCores())}
-
-  However, be cautious when setting \command{mc.cores}.  This can create
-  not only high CPU usage but also high RAM usage, especially when using
-  functions \command{partialPlot} and \command{predict}.
-
-  The method can impute the missing observations in x (covariates) using
-  on the fly imputation. Details regarding can be found in the
-  \pkg{randomForestSRC} package. If missing values are present in the
-  \code{tm}, \code{id} or \code{y}, the user should either impute or
-  delete these values before executing the function.
-
-  Finally note \code{cv.flag} can be used for an in-sample
-  cross-validated estimate of prediction error.  This is used to
-  determine the optimized number of boosting iterations \emph{Mopt}.
-  The final mu predictor is evaluated at this value and is
-  cross-validated.  The prediction error returned via \command{err.rate}
-  is standardized by the overall standard deviation of y.  } \value{ An
-  object of class \code{(boostmtree, grow)} with the following
-  components:
-
-     \item{x}{The x-values, but with only one row per individual
-       (i.e. duplicated rows are removed). Values sorted on \code{id}.}
-     \item{xvar.names}{X-variable names.}
-     \item{time}{List with each component containing the time
-       points for a given individual. Values sorted on \code{id}.}
-     \item{id}{Sorted subject identifier.}
-     \item{y}{List with each component containing the observed
-       y-values for a given individual. Values sorted on \code{id}.}
-     \item{Yorg}{For family == "Nominal" or family == "Ordinal", this provides the 
-     response in list-format where each element coverted the response into the binary response.}  
-     \item{family}{Family of \code{y}.}   
-     \item{ymean}{Overall mean of y-values for all individuals. If \code{family} = 
-     "Binary", \code{ymean} = 0.}
-     \item{ysd}{Overall standard deviation of y-values for all individuals. If \code{family} = 
-     "Binary", \code{ysd} = 1.}
-     \item{na.action}{Remove missing values or impute?}
-     \item{n}{Total number of subjects.}
-     \item{ni}{Number of repeated measures for each subject.}
-     \item{n.Q}{Number of class labels for non-continuous response.}
-     \item{Q_set}{Class labels for the non-continuous response.}
-     \item{y.unq}{Unique y values for the non-continous response.}
-     \item{y_reference}{Reference value for family == "Nominal".}  
-     \item{tm.unq}{Unique time points.}
-     \item{gamma}{List of length \emph{M}, with each component
-       containing the boosted tree fitted values.}
-     \item{mu}{List with each component containing the estimated mean
-       values for an individual.  That is, each component contains the
-       estimated time-profile for an individual.  When in-sample
-       cross-validation is requested using \command{cv.flag}=TRUE, the
-       estimated mean is cross-validated and evaluated at the optimal
-       number of iterations \code{Mopt}.
-       If the family == "Nominal" or family == "Ordinal", \code{mu} will have a higher level
-       of list to accommodate binary responses generated from nominal or ordinal response.} 
-     \item{Prob_class}{For family == "Ordinal", this provides individual probabilty rather than
-     cumulative probabilty.}
-     \item{lambda}{Smoothing parameter. Results provided in vector or matrix form, depending
-     on whether family == c("Continuous","Binary") or family == c("Nominal", "Ordinal").}
-     \item{phi}{Variance parameter.Results provided in vector or matrix form, depending
-     on whether family == c("Continuous","Binary") or family == c("Nominal", "Ordinal").}
-     \item{rho}{Correlation parameter.Results provided in vector or matrix form, depending
-     on whether family == c("Continuous","Binary") or family == c("Nominal", "Ordinal").}
-     \item{baselearner}{List of length \emph{M} containing the base learners.}
-     \item{membership}{List of length \emph{M}, with each component
-       containing the terminal node membership for a given boosting
-       iteration.}
-     \item{X.tm}{Design matrix for all the unique time points.}
-     \item{D}{Design matrix for each subject.}
-     \item{d}{Degree of the piecewise B-spline polynomial.}
-     \item{pen.ord}{Penalization difference order.}
-     \item{K}{Number of terminal nodes.}
-     \item{M}{Number of boosting iterations.}
-     \item{nu}{Boosting regularization parameter.}
-     \item{ntree}{Number of trees.}
-     \item{cv.flag}{Whether in-sample CV is used or not?}
-     \item{err.rate}{In-sample standardized estimate of l1-error and RMSE.}
-     \item{rmse}{In-sample standardized RMSE at optimized \code{M}.}
-     \item{Mopt}{The optimized \code{M}.}
-     \item{gamma.i.list}{Estimate of gamma obtained from in-sample CV if \code{cv.flag} = TRUE,       else NULL}
-     \item{forest.tol}{Forest tolerance value (needed for prediction).}
+The fitted mean is linked to the response scale through
+\deqn{g\{\mu_i(t)\} = \eta_i(t),}
+where the link \eqn{g} depends on the family:
+\itemize{
+  \item For \code{"continuous"}, the identity link is used and the method
+  models the mean trajectory directly.
+  \item For \code{"binary"}, the logit link is used so that the fitted values
+  represent estimated probabilities for the non-reference class.
+  \item For \code{"nominal"}, the response is decomposed into one-vs-reference
+  logit submodels, one for each non-reference class. The final class
+  probabilities are then reconstructed from those submodels.
+  \item For \code{"ordinal"}, the response is modeled through cumulative logit
+  submodels. The final class probabilities are recovered from the fitted
+  cumulative probabilities, with a monotonicity correction applied so that the
+  fitted cumulative curves remain ordered.
 }
+
+For longitudinal data, \code{boostmtree} uses a working covariance model to
+describe the dependence among repeated measurements from the same subject after
+the mean trajectory has been fitted. For subject \eqn{i} with \eqn{n_i}
+observations, and for response component \eqn{q}, the working covariance has
+compound-symmetry form
+
+\deqn{
+V_{iq} = \phi_q \{ (1 - \rho_q) I_{n_i} + \rho_q J_{n_i} \},
+}
+
+where \eqn{I_{n_i}} is the \eqn{n_i \times n_i} identity matrix and
+\eqn{J_{n_i}} is the \eqn{n_i \times n_i} matrix of ones.
+
+The roles of \code{phi} and \code{rho} are different:
+
+\itemize{
+  \item \code{phi} is a scale parameter. It controls the overall size of the
+  residual variation. Larger values of \code{phi} mean that, after accounting
+  for the fitted mean structure, the repeated measurements still show greater
+  variability.
+
+  \item \code{rho} is a within-subject correlation parameter. It controls how
+  strongly repeated measurements from the same subject move together after
+  accounting for the fitted mean structure. When \code{rho = 0}, the working
+  residuals are uncorrelated within subject. Positive values indicate positive
+  within-subject association.
+}
+
+Thus, \code{phi} answers the question "how much variation remains?", whereas
+\code{rho} answers the question "how is that remaining variation shared across
+measurements from the same subject?".
+
+These parameters should be distinguished from \code{lambda}. The parameter
+\code{lambda} penalizes roughness in the time-basis coefficients, whereas
+\code{phi} and \code{rho} describe the residual covariance structure.
+
+For continuous families there is a single pair \eqn{(\phi, \rho)}. For the
+binary, nominal, and ordinal families, the method is built from one or more
+working submodels, so the fitted object may contain a separate path
+\eqn{(\phi_q, \rho_q)} for each response component \eqn{q}.
+
+Out-of-bag tracking via \code{cv.flag = TRUE} records a standardized error path
+and selects an optimal stopping iteration \code{m.opt}. This package uses
+\emph{out-of-bag} subjects in two places: for the cross-validation path stored
+when \code{cv.flag = TRUE}, and for grow-object variable importance returned by
+\code{vimp.boostmtree()}. The default control object uses
+\code{bootstrap = "by.root"}, which naturally creates out-of-bag subjects.
+By contrast, \code{bootstrap = "none"} produces a deterministic in-bag fit
+with no out-of-bag data. That can still be useful for ordinary fitting and for
+prediction-object analyses based on a separate test set, but it is not suitable
+for out-of-bag CV or grow-object variable importance.
+
+Note that when \code{cv.flag = TRUE}, \code{boostmtree()} checks the requested
+resampling rule before fitting. If the requested control object would
+yield no out-of-bag subjects, the function either adjusts the resampling
+rule to the default out-of-bag scheme or stops with a clear message when
+a user-supplied sample matrix is incompatible with OOB CV.
+
+When \code{tm} and \code{id} are omitted, the function switches to univariate
+mode. In that case there is no longitudinal time basis, and the method acts as
+a boosted tree model for a single response per row.
+}
+
+
+\value{
+An object of class \code{c("boostmtree", "grow", ...)} with components:
+\describe{
+  \item{base.learner}{
+    Fitted tree base learners, indexed by boosted subproblem and boosting iteration.
+  }
+
+  \item{control}{
+    The normalized control object used for fitting.
+  }
+
+  \item{cv.flag}{
+    Logical; whether cross-validation tracking was requested.
+  }
+
+  \item{d}{
+    Degree of the time basis used in the fitted model.
+  }
+
+  \item{err.rate}{
+    Standardized cross-validation error summaries. For single-response fits this is
+    typically a matrix with columns \code{"l1"} and \code{"l2"}; for multi-subproblem
+    fits it is stored by subproblem. \code{NULL} when \code{cv.flag = FALSE}.
+  }
+
+  \item{family}{
+    The fitted response family.
+  }
+
+  \item{gamma}{
+    Terminal-node coefficient summaries by subproblem and boosting iteration.
+  }
+
+  \item{gamma.i.list}{
+    Cross-validated terminal-node coefficient summaries when
+    \code{cv.flag = TRUE}; otherwise \code{NULL}.
+  }
+
+  \item{id}{
+    The sorted long-format subject identifier.
+  }
+
+  \item{id.unique}{
+    Unique subject identifiers in subject order.
+  }
+
+  \item{k}{
+    Requested number of terminal nodes.
+  }
+
+  \item{lambda}{
+    Path of smoothing-parameter values across boosting iterations and
+    subproblems, or \code{NULL} in univariate mode.
+  }
+
+  \item{M}{
+    Number of boosting iterations.
+  }
+
+  \item{m.opt}{
+    Selected stopping iteration for each subproblem when
+    \code{cv.flag = TRUE}; otherwise \code{NULL}.
+  }
+
+  \item{membership}{
+    Terminal-node memberships by subproblem and boosting iteration.
+  }
+
+  \item{mu}{
+    Fitted mean trajectories. For continuous and binary families this is a
+    subject-level list of fitted trajectories. For nominal and ordinal families
+    this is indexed first by boosted subproblem and then by subject.
+  }
+
+  \item{n}{
+    Number of subjects.
+  }
+
+  \item{n.q}{
+    Number of boosted subproblems.
+  }
+
+  \item{na.action}{
+    Missing-data rule applied to \code{x}.
+  }
+
+  \item{ni}{
+    Number of observations per subject.
+  }
+
+  \item{ntree}{
+    Number of trees requested through \code{control}. The current implementation
+    requires \code{ntree = 1}.
+  }
+
+  \item{nu}{
+    Boosting step-size vector used internally.
+  }
+
+  \item{oob.available}{
+    Logical flag indicating whether the fitted resampling path produced
+    out-of-bag subjects at each boosting iteration.
+  }
+
+  \item{oob.subject.count}{
+    Number of out-of-bag subjects at each boosting iteration. For single-response
+    fits this is typically a vector of length \code{M}; for multi-subproblem fits
+    it may be stored by subproblem.
+  }
+
+  \item{pen.ord}{
+    Differencing order used in the P-spline penalty.
+  }
+
+  \item{phi}{
+    Estimated path of the residual scale parameter. In the working covariance
+    model, \code{phi} determines the marginal variance of repeated measurements
+    after accounting for the fitted mean structure.
+  }
+
+  \item{prob.class}{
+    Class probabilities by subject for non-continuous families;
+    \code{NULL} for the continuous family.
+  }
+
+  \item{q.set}{
+    Threshold levels (ordinal) or non-reference levels (binary or nominal)
+    used to define the boosted subproblems.
+  }
+
+  \item{q.total}{
+    Total number of observed response levels for non-continuous families.
+  }
+
+  \item{rho}{
+    Estimated path of the within-subject correlation parameter. In the working
+    covariance model, \code{rho} determines how strongly repeated measurements
+    from the same subject are associated after accounting for the fitted mean
+    structure. Under compound symmetry, the off-diagonal covariance is
+    \eqn{\rho \phi}.
+  }
+
+  \item{rmse}{
+    Standardized root mean squared error evaluated at \code{m.opt},
+    or \code{NULL} when \code{cv.flag = FALSE}.
+  }
+
+  \item{time}{
+    A list of time vectors, one per subject.
+  }
+
+  \item{time.design}{
+    Subject-specific time-design matrices.
+  }
+
+  \item{time.unique}{
+    Sorted unique observation times used to build the time basis.
+  }
+
+  \item{univariate}{
+    Logical; whether the model was fit in univariate mode.
+  }
+
+  \item{x}{
+    Subject-level covariate data with one row per subject.
+  }
+
+  \item{x.tm}{
+    Time-basis design matrix defined on \code{time.unique}.
+  }
+
+  \item{x.var.names}{
+    Covariate names.
+  }
+
+  \item{y}{
+    Observed responses split by subject.
+  }
+
+  \item{y.levels}{
+    Observed response levels for non-continuous families.
+    \code{NA} for the continuous family.
+  }
+
+  \item{y.mean}{
+    Overall response mean used for standardization.
+  }
+
+  \item{y.org}{
+    Observed responses represented at the boosted-subproblem level.
+    For non-continuous families this is the encoded binary or cumulative
+    response used by the corresponding submodel.
+  }
+
+  \item{y.reference}{
+    Reference response level for the nominal family.
+    \code{NULL} otherwise.
+  }
+
+  \item{y.sd}{
+    Overall response standard deviation used for standardization.
+  }
+}
+}
+
+
+
 \author{
-  Hemant Ishwaran, Amol Pande and Udaya B. Kogalur
+Amol Pande, Udaya B. Kogalur and Hemant Ishwaran
 }
+
 \references{
-  Friedman J.H. (2001). Greedy function approximation: a gradient
-  boosting machine, \emph{Ann. of Statist.}, 5:1189-1232.
+Friedman J.H. (2001). Greedy function approximation: a gradient boosting
+machine. \emph{The Annals of Statistics}, 29(5):1189--1232.
 
-  Friedman J.H. (2002). Stochastic gradient boosting.
-  \emph{Comp. Statist. Data Anal.}, 38(4):367--378.
+Friedman J.H. (2002). Stochastic gradient boosting.
+\emph{Computational Statistics & Data Analysis}, 38(4):367--378.
 
-  Pande A., Li L., Rajeswaran J., Ehrlinger J., Kogalur U.B.,
-  Blackstone E.H., Ishwaran H. (2017).  Boosted multivariate trees for
-  longitudinal data, \emph{Machine Learning}, 106(2): 277--305.
+Pande A., Li L., Rajeswaran J., Ehrlinger J., Kogalur U.B.,
+Blackstone E.H., Ishwaran H. (2017). Boosted multivariate trees for
+longitudinal data. \emph{Machine Learning}, 106(2):277--305.
 
-  Pande, A., Ishwaran, H., Blackstone, E. et al. 
-  Application of Gradient Boosting in Evaluating Surgical Ablation for Atrial Fibrillation. 
-  SN COMPUT. SCI. 3, 466 (2022). https://doi.org/10.1007/s42979-022-01350-3
+Pande A., Ishwaran H., Blackstone E.H., Rajeswaran J., and Gillanov M.
+(2022). Application of gradient boosting in evaluating surgical ablation
+for atrial fibrillation. \emph{SN Computer Science}, 3:466.
 
-  Pande A. (2017).  \emph{Boosting for longitudinal data}.  Ph.D. Dissertation,
-  Miller School of Medicine, University of Miami.
+Pande A., Ishwaran H., and Blackstone E.H. (2022). Boosting for
+multivariate longitudinal responses. \emph{SN Computer Science}, 3:186.
+
+Pande A. (2017). \emph{Boosting for longitudinal data}. Ph.D. dissertation,
+Miller School of Medicine, University of Miami.
 }
+
 \seealso{
-  \command{\link{marginalPlot}}
-  \command{\link{partialPlot}},
-  \command{\link{plot.boostmtree}},
-  \command{\link{predict.boostmtree}},
-  \command{\link{print.boostmtree}},
-  \command{\link{simLong}},
-  \command{\link{vimpPlot}}
+  \code{\link{AF}},
+  \code{\link{boostmtree.control}},
+  \code{\link{marginal.plot.boostmtree}},
+  \code{\link{partial.plot.boostmtree}},
+  \code{\link{plot.boostmtree}},
+  \code{\link{plot.vimp.boostmtree}},
+  \code{\link{predict.boostmtree}},
+  \code{\link{print.boostmtree}},
+  \code{\link{simLong}},
+  \code{\link{spirometry}},
+  \code{\link{vimp.boostmtree}}
 }
+
 \examples{
-##------------------------------------------------------------
-## synthetic example (Response y is continuous)
-## 0.8 correlation, quadratic time with quadratic interaction
-##-------------------------------------------------------------
-#simulate the data (use a small sample size for illustration)
-dta <- simLong(n = 50, N = 5, rho =.80, model = 2,family = "Continuous")$dtaL
+## -------------------------------------------------------------
+## Simulated continuous longitudinal response.
+## Use fixed lambda and rho for a fast, example run.
+## -------------------------------------------------------------
 
-#basic boosting call (M set to a small value for illustration)
-boost.grow <- boostmtree(dta$features, dta$time, dta$id, dta$y,family = "Continuous",M = 20)
+set.seed(7)
+sim.obj <- simLong(n = 20, n.time = 4, rho = 0.5, model = 1,
+                   family = "continuous")
+dta <- sim.obj$data.list
 
-#print results
-print(boost.grow)
+fit <- boostmtree(
+  x = dta$features,
+  tm = dta$time,
+  id = dta$id,
+  y = dta$y,
+  family = "continuous",
+  M = 10,
+  lambda = 0,
+  rho = 0,
+  verbose = FALSE,
+  control = boostmtree.control(seed = 7)
+)
 
-#plot.results
-plot(boost.grow)
+print(fit)
+plot.data <- plot(fit, output = "data")
+str(plot.data[[1]], max.level = 1)
 
-\dontrun{
-##------------------------------------------------------------
-## synthetic example (Response y is binary)
-## 0.8 correlation, quadratic time with quadratic interaction
-##-------------------------------------------------------------
-#simulate the data (use a small sample size for illustration)
-dta <- simLong(n = 50, N = 5, rho =.80, model = 2, family = "Binary")$dtaL
+## -------------------------------------------------------------
+## Univariate regression: omit tm and id.
+## -------------------------------------------------------------
 
-#basic boosting call (M set to a small value for illustration)
-boost.grow <- boostmtree(dta$features, dta$time, dta$id, dta$y,family = "Binary", M = 20)
+x.uni <- mtcars[, setdiff(names(mtcars), "mpg")]
+y.uni <- mtcars$mpg
 
-#print results
-print(boost.grow)
+fit.uni <- boostmtree(
+  x = x.uni,
+  y = y.uni,
+  family = "continuous",
+  M = 10,
+  lambda = 0,
+  verbose = FALSE
+)
 
-#plot.results
-plot(boost.grow)
+print(fit.uni)
 
-##------------------------------------------------------------
-## Same synthetic example as above with continuous response
-## but with in-sample cross-validation estimate for RMSE
-##-------------------------------------------------------------
-dta <- simLong(n = 50, N = 5, rho =.80, model = 2,family = "Continuous")$dtaL
-boost.cv.grow <- boostmtree(dta$features, dta$time, dta$id, dta$y,
-                 family = "Continuous", M = 300, cv.flag = TRUE)
-plot(boost.cv.grow)
-print(boost.cv.grow)
+\donttest{
+## -------------------------------------------------------------
+## Simulated binary longitudinal response.
+## This example uses a fast, deterministic settings.
+## -------------------------------------------------------------
 
-##----------------------------------------------------------------------------
-## spirometry data (Response is continuous)
-##----------------------------------------------------------------------------
-data(spirometry, package = "boostmtree")
+set.seed(17)
+sim.bin <- simLong(n = 20, n.time = 4, rho = 0.5, model = 2,
+                   family = "binary")
+dta.bin <- sim.bin$data.list
 
-#boosting call: cubic B-splines with 15 knots
-spr.obj <- boostmtree(spirometry$features, spirometry$time, spirometry$id, spirometry$y,
-                        family = "Continuous",M = 100, nu = .025, nknots = 15)
-plot(spr.obj)
+fit.bin <- boostmtree(
+  x = dta.bin$features,
+  tm = dta.bin$time,
+  id = dta.bin$id,
+  y = dta.bin$y,
+  family = "binary",
+  M = 10,
+  lambda = 0,
+  rho = 0,
+  verbose = FALSE
+)
 
+print(fit.bin)
+plot(fit.bin)
 
-##----------------------------------------------------------------------------
-## Atrial Fibrillation data (Response is binary)
-##----------------------------------------------------------------------------
+## -------------------------------------------------------------
+## AF data illustration.  Parameters selected for a fast run.
+## -------------------------------------------------------------
+
 data(AF, package = "boostmtree")
 
-#boosting call: cubic B-splines with 15 knots
-AF.obj <- boostmtree(AF$feature, AF$time, AF$id, AF$y,
-                        family = "Binary",M = 100, nu = .025, nknots = 15)
-plot(AF.obj)
+fit.af <- boostmtree(
+  x = AF$features,
+  tm = AF$time,
+  id = AF$id,
+  y = AF$y,
+  family = "binary",
+  M = 10,
+  k = 15,
+  nu = .025,
+  n.knots = 15,
+  verbose = TRUE
+)
 
 
-##----------------------------------------------------------------------------
-## sneaky way to use boostmtree for (univariate) regression: boston housing
-##----------------------------------------------------------------------------
+print(fit.af)
 
-if (library("mlbench", logical.return = TRUE)) {
 
-  ## assemble the data
-  data(BostonHousing)
-  x <- BostonHousing; x$medv <- NULL
-  y <- BostonHousing$medv
-  trn <- sample(1:nrow(x), size = nrow(x) * (2 / 3), replace = FALSE)
+## -------------------------------------------------------------
+## Ordinal response illustration.
+## A latent continuous response is grouped into three ordered levels.
+## -------------------------------------------------------------
 
-  ## run boosting in univariate mode
-  o <- boostmtree(x = x[trn,], y = y[trn],family = "Continuous")
-  o.p <- predict(o, x = x[-trn, ], y = y[-trn])
-  print(o)
-  plot(o.p)
+set.seed(31)
+sim.ord <- simLong(n = 25, n.time = 4, family = "continuous")
+dta.ord <- sim.ord$data.list
+rank.y <- rank(dta.ord$y, ties.method = "first")
+brks <- c(0, floor(length(rank.y) / 3), floor(2 * length(rank.y) / 3), length(rank.y))
+y.ord <- cut(
+  rank.y,
+  breaks = brks,
+  labels = c(0, 1, 2),
+  include.lowest = TRUE,
+  ordered_result = TRUE
+)
 
-  ## run boosting in univariate mode to obtain RMSE and vimp
-  o.cv <- boostmtree(x = x, y = y, M = 100,family = "Continuous",cv.flag = TRUE)
-  print(o.cv)
-  plot(o.cv)
+fit.ord <- boostmtree(
+  x = dta.ord$features,
+  tm = dta.ord$time,
+  id = dta.ord$id,
+  y = y.ord,
+  family = "ordinal",
+  M = 50,
+  verbose = FALSE
+)
+
+print(fit.ord)
+
 }
-
-}}
+}
 \keyword{boosting}
-

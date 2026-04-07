@@ -5,15 +5,17 @@
   Boosted multivariate trees for longitudinal data.
 }
 \description{
-  Multivariate extension of Friedman's (2001) gradient descent boosting
-  method for modeling longitudinal response
-  using multivariate tree base learners.
-  Longitudinal response could be continuous, binary, nominal or ordinal.
-  Covariate-time interactions are modeled using penalized B-splines
-  (P-splines) with estimated adaptive smoothing parameter.
+
+  Multivariate boosted tree models for repeated-measures outcomes. The
+  method combines gradient boosting, subject-level tree partitioning, and
+  smooth time effects to estimate subject-specific mean trajectories or
+  class probabilities over time.  Supports continuous, binary, nominal,
+  and ordinal longitudinal data, as well as univariate responses.
+
 }
 
 \section{Package Overview}{
+
   This package contains many useful functions and users should read the
   help file in its entirety for details.  However, we briefly mention
   several key functions that may make it easier to navigate and
@@ -35,30 +37,42 @@
   }
 }
 \author{
-  Hemant Ishwaran, Amol Pande and Udaya B. Kogalur
+Amol Pande, Udaya B. Kogalur and Hemant Ishwaran
 }
 \references{
-  Friedman J.H. (2001). Greedy function approximation: a gradient
-  boosting machine, \emph{Ann. of Statist.}, 5:1189-1232.
-  
+
+  Friedman J.H. (2001). Greedy function approximation: a gradient boosting
+  machine. \emph{The Annals of Statistics}, 29(5):1189--1232.
+
   Friedman J.H. (2002). Stochastic gradient boosting.
-  \emph{Comp. Statist. Data Anal.}, 38(4):367--378.
-
+  \emph{Computational Statistics & Data Analysis}, 38(4):367--378.
+  
   Pande A., Li L., Rajeswaran J., Ehrlinger J., Kogalur U.B.,
-  Blackstone E.H., Ishwaran H. (2017).  Boosted multivariate trees for
-  longitudinal data, \emph{Machine Learning}, 106(2): 277--305. 
+  Blackstone E.H., Ishwaran H. (2017). Boosted multivariate trees for
+  longitudinal data. \emph{Machine Learning}, 106(2):277--305.
+  
+  Pande A., Ishwaran H., Blackstone E.H., Rajeswaran J., and Gillanov M.
+  (2022). Application of gradient boosting in evaluating surgical ablation
+  for atrial fibrillation. \emph{SN Computer Science}, 3:466.
+  
+  Pande A., Ishwaran H., and Blackstone E.H. (2022). Boosting for
+  multivariate longitudinal responses. \emph{SN Computer Science}, 3:186.
+  
+  Pande A. (2017). \emph{Boosting for longitudinal data}. Ph.D. dissertation,
+  Miller School of Medicine, University of Miami.
 
-  Pande, A., Ishwaran, H., Blackstone, E. et al. 
-  Application of Gradient Boosting in Evaluating Surgical Ablation for Atrial Fibrillation. 
-  SN COMPUT. SCI. 3, 466 (2022). https://doi.org/10.1007/s42979-022-01350-3 
 }
+
 \seealso{
-  \command{\link{partialPlot}},
-  \command{\link{plot.boostmtree}},
-  \command{\link{predict.boostmtree}},
-  \command{\link{print.boostmtree}},
-  \command{\link{simLong}}
+  \code{\link{boostmtree}},
+  \code{\link{boostmtree.control}},
+  \code{\link{plot.boostmtree}},
+  \code{\link{predict.boostmtree}},
+  \code{\link{print.boostmtree}},
+  \code{\link{simLong}},
+  \code{\link{vimp.boostmtree}},
 }
+
 \keyword{package}
 
 

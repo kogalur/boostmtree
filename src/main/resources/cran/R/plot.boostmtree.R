@@ -1,241 +1,229 @@
-plot.boostmtree <- function (x, 
-                             use.rmse = TRUE,
-                             path_saveplot = NULL,
-                             Verbose = TRUE,
-                              ...)
-{
-  if (sum(inherits(x, c("boostmtree", "grow"), TRUE) == c(1, 2)) != 2 &
-      sum(inherits(x, c("boostmtree", "predict"), TRUE) == c(1, 2)) != 2) {
-    stop("this function only works for objects of class `(boostmtree, grow)' or '(boostmtree, predict)'")
+boostmtree.draw.single.panel <- function(panel, model, payload.q, use.rmse) {
+  if (identical(panel, "trajectory")) {
+    plot(
+      unlist(payload.q$time.by.subject),
+      unlist(payload.q$fitted.by.subject),
+      xlab = "time",
+      ylab = "fitted",
+      type = "n"
+    )
+    boostmtree.line.plot(payload.q$time.by.subject, payload.q$fitted.by.subject)
+    return(invisible(NULL))
   }
-  if (sum(inherits(x, c("boostmtree", "grow"), TRUE) == c(1, 2)) == 2) {
-    n.Q <- x$n.Q
-    Q_set <- x$Q_set
-    Family <- x$family
-    if(Family == "Continuous" || Family == "Binary"){
-    
-      List_Temp <- vector("list",1)
-      List_Temp[[1]] <- x$mu
-      x$mu <- List_Temp
-      rm(List_Temp)
 
-      List_Temp <- vector("list",1)
-      List_Temp[[1]] <- x$Yorg
-      x$Yorg <- List_Temp
-      rm(List_Temp)
-
-     if(!is.null(x$err.rate)){
-      List_Temp <- vector("list",1)
-      List_Temp[[1]] <- x$err.rate
-      x$err.rate <- List_Temp
-      rm(List_Temp)
-     }
-
-     if(!is.null(x$rho)){
-       x$rho <- as.matrix(x$rho) 
-     }
-      
-      if(!is.null(x$phi)){
-        x$phi <- as.matrix(x$phi) 
-      }
-      
-      if(!is.null(x$lambda)){
-        x$lambda <- as.matrix(x$lambda) 
-      }
-     
-    }
-
-    for(q in 1:n.Q){
-    
-    Plot_Name <- if(n.Q == 1) "boostmtree_plot.pdf" else paste("boostmtree_plot_Prob(y = ",Q_set[q],")",".pdf",sep="")
-    if(is.null(path_saveplot)){
-      path_saveplot <- tempdir()
-   }
-    pdf(file = paste(path_saveplot,"/",Plot_Name,sep=""),width = 10,height = 10)
-    
-    def.par <- par(no.readonly = TRUE) 
-    n <- x$n
-    M <- x$M
-    univariate <- length(x$id) == length(unique(x$id))
-    if (!univariate) {
-      if (is.null(x$err.rate)) {
-        layout(rbind(c(1, 4), c(2, 5), c(3, 6)), widths = c(1, 1))
-      }
-      else {
-        layout(rbind(c(1, 3), c(2, 4), c(2, 5)), widths = c(1, 1))
-      }
-    } else 
-      {
-      if (!is.null(x$err.rate)) {
-        layout(rbind(c(1, 2)), widths = c(1, 1))
-      }
-    }
-    if (!univariate) {
-        plot(unlist(x$time), unlist(x$mu[[q]]), xlab = "time", ylab = "predicted", type = "n")
-        line.plot(x$time, x$mu[[q]])
-    }
-    if (!use.rmse) {
-       x$err.rate[[q]][, "l2"] <- (x$err.rate[[q]][, "l2"] * x$ysd)^2
-       y.lab <- "OOB MSE"
-    }
-    else {
-      y.lab <- "OOB standardized RMSE"
-    }
-    if (!univariate) {
-      if(is.null(x$err.rate)) {
-        plot(unlist(x$time), unlist(x$Yorg[[q]]) - unlist(x$mu[[q]]), xlab = "time", ylab = "residual", type = "n")
-        line.plot(x$time, lapply(1:n, function(i) {x$Yorg[[q]][[i]] - x$mu[[q]][[i]]}))
-        plot(unlist(x$Yorg[[q]]), unlist(x$mu[[q]]), xlab = "y", ylab = "predicted", type = "n")
-        line.plot(x$Yorg[[q]], x$mu[[q]])
-      }
-      else {#error rate
-        plot(1:M, x$err.rate[[q]][, "l2"],
-           xlab = "iteration", 
-           ylab = y.lab,
-           type = "l", lty = 1)
-        abline(v = x$Mopt[q], lty = 2, col = 2, lwd = 2)
-      }
-    }
-    else {
-      plot(unlist(x$Yorg[[q]]), unlist(x$mu[[q]]), xlab = "y", ylab = "predicted", type = "n")
-      point.plot(x$Yorg[[q]], x$mu[[q]])
-      abline(0, 1, col = "gray", lty = 2)
-      if (!is.null(x$err.rate)) {
-        plot(1:M, x$err.rate[[q]][, "l2"],
-             xlab = "iteration", 
-             ylab = y.lab,
-             type = "l", lty = 1)
-        abline(v = x$Mopt[q], lty = 2, col = 2, lwd = 2)
-      }
-    }
-    if (!univariate) {
-      plot(1:M, x$rho[,q], ylim = range(lowess.mod(1:M, x$rho[,q])$y),
-           xlab = "iterations", ylab = expression(rho), type = "n")
-      lines(lowess.mod(1:M, x$rho[,q], f = 5/10))
-      plot(1:M, x$phi[,q], ylim = range(lowess.mod(1:M, x$phi[,q])$y),
-           xlab = "iterations", ylab = expression(phi), type = "n")
-      lines(lowess.mod(1:M, x$phi[,q], f = 5/10))
-      plot(1:M, x$lambda[,q], ylim = range(lowess.mod(1:M, x$lambda[,q])$y),
-           xlab = "iterations", ylab = expression(lambda), type = "n")
-      lines(lowess.mod(1:M, x$lambda[,q], f = 5/10))
-    }
-    par(def.par)
-    dev.off()
-    if(Verbose){
-       cat("Plot will be saved at:",path_saveplot,sep = "","\n")
-    } 
-   }
+  if (identical(panel, "residual")) {
+    residual.by.subject <- lapply(seq_along(payload.q$observed.by.subject), function(i) {
+      payload.q$observed.by.subject[[i]] - payload.q$fitted.by.subject[[i]]
+    })
+    plot(
+      unlist(payload.q$time.by.subject),
+      unlist(residual.by.subject),
+      xlab = "time",
+      ylab = "residual",
+      type = "n"
+    )
+    boostmtree.line.plot(payload.q$time.by.subject, residual.by.subject)
+    abline(h = 0, lty = 2, col = "gray")
+    return(invisible(NULL))
   }
-  else {
-    n.Q <- x$n.Q
-    Q_set <- x$Q_set
-    Family <- x$family
 
-    if(Family == "Continuous" || Family == "Binary"){
-    
-      List_Temp <- vector("list",1)
-      List_Temp[[1]] <- x$mu
-      x$mu <- List_Temp
-      rm(List_Temp)
-
-      List_Temp <- vector("list",1)
-      List_Temp[[1]] <- x$err.rate
-      x$err.rate <- List_Temp
-      rm(List_Temp)
-
-      if(!is.null(x$boost.obj$rho)){
-        x$boost.obj$rho <- as.matrix(x$boost.obj$rho)   
-      }
-     
-      if(!is.null(x$boost.obj$phi)){
-        x$boost.obj$phi <- as.matrix(x$boost.obj$phi)   
-      }
-      
-      if(!is.null(x$boost.obj$lambda)){
-        x$boost.obj$lambda <- as.matrix(x$boost.obj$lambda)   
-      }
-
+  if (identical(panel, "observed.vs.fitted")) {
+    plot(
+      unlist(payload.q$observed.by.subject),
+      unlist(payload.q$fitted.by.subject),
+      xlab = "observed",
+      ylab = "fitted",
+      type = "n"
+    )
+    if (isTRUE(model$univariate)) {
+      boostmtree.point.plot(payload.q$observed.by.subject, payload.q$fitted.by.subject)
+    } else {
+      boostmtree.line.plot(payload.q$observed.by.subject, payload.q$fitted.by.subject)
     }
-
-    for(q in 1:n.Q){
-    Plot_Name <- if(n.Q == 1) "boostmtree_plot.pdf" else paste("boostmtree_plot_Prob(y = ",Q_set[q],")",".pdf",sep="")
-
-    if(is.null(path_saveplot)){
-      path_saveplot <- tempdir()
-    }
-    pdf(file = paste(path_saveplot,"/",Plot_Name,sep=""),width = 10,height = 10)
-      
-    univariate <- length(x$boost.obj$id) == length(unique(x$boost.obj$id))
-    if (!(univariate && is.null(x$err.rate))) {
-      def.par <- par(no.readonly = TRUE) 
-    }
-    if (!univariate && is.null(x$err.rate)) {
-      plot(unlist(x$time), unlist(x$mu[[q]]), xlab = "time", ylab = "predicted", type = "n")
-      line.plot(x$time, x$mu[[q]])
-    }
-    else if (!is.null(x$err.rate)) {
-      M <- x$boost.obj$M
-      Mopt <- x$Mopt[q]
-      x$vimp <- NULL
-      
-      if (!univariate) {
-        if (!is.null(x$vimp)) {
-          layout(rbind(c(1, 3), c(1, 4), c(2, 5), c(2, 6)), widths = c(1, 1))
-        }
-        else {
-          layout(rbind(c(1, 2), c(1, 3), c(1, 4), c(1, 5)), widths = c(1, 1))
-        }
-      }
-      else {
-        if (!is.null(x$vimp)) {
-          layout(rbind(c(1, 2)), widths = c(1, 1))
-        }
-      }
-      if (!use.rmse) {
-        x$err.rate[[q]][, "l2"] <- (x$err.rate[[q]][, "l2"] * x$boost.obj$ysd)^2
-        if (!is.null(x$vimp)) {
-          x$vimp <- (x$vimp * x$boost.obj$ysd)^2
-        }
-        y.lab.err <- "Test sample MSE"
-        y.lab.vimp <- "Variable Importance (MSE)"
-      }
-      else {
-        y.lab.err <- "Test sample standardized RMSE"
-        y.lab.vimp <- "Variable Importance (standardized RMSE)"
-      }
-      plot(1:M, x$err.rate[[q]][, "l2"],
-           xlab = "iteration", 
-           ylab = y.lab.err,
-           type = "l", lty = 1)
-      abline(v = Mopt[q], lty = 2, col = 2, lwd = 2)
-      if (!is.null(x$vimp)) {
-        vimp <- x$vimp
-        barplot(vimp, las = 2, ylab = y.lab.vimp, cex.names = 1.0)
-      }
-      if (!univariate) {
-        plot(unlist(x$time), unlist(x$mu[[q]]), xlab = "time", ylab = "predicted", type = "n")
-        line.plot(x$time, x$mu[[q]])
-        plot(1:M, x$boost.obj$rho[,q], ylim = range(lowess.mod(1:M, x$boost.obj$rho[,q])$y), 
-             xlab = "iterations", ylab = expression(rho), type = "n")
-        lines(lowess.mod(1:M, x$boost.obj$rho[,q], f = 5/10))
-        abline(v=Mopt[q], lty = 2, col = 2, lwd = 2)
-        plot(1:M, x$boost.obj$phi[,q], ylim = range(lowess.mod(1:M, x$boost.obj$phi[,q])$y), 
-             xlab = "iterations", ylab = expression(phi), type = "n")
-        lines(lowess.mod(1:M, x$boost.obj$phi[,q], f = 5/10))
-        abline(v=Mopt, lty = 2, col = 2, lwd = 2)
-        plot(1:M, x$boost.obj$lambda[,q], ylim = range(lowess.mod(1:M, x$boost.obj$lambda[,q])$y),
-             xlab = "iterations", ylab = expression(lambda), type = "n")
-        lines(lowess.mod(1:M, x$boost.obj$lambda[,q], f = 5/10))
-        abline(v=Mopt[q], lty = 2, col = 2, lwd = 2)
-      }
-    }
-    if (!(univariate && is.null(x$err.rate))) {
-      par(def.par)
-    }
-    dev.off()
-    if(Verbose){
-       cat("Plot will be saved at:",path_saveplot,sep = "","\n")
-    } 
+    abline(0, 1, col = "gray", lty = 2)
+    return(invisible(NULL))
   }
+
+  if (identical(panel, "error.path")) {
+    y.label <- if (use.rmse) "standardized RMSE" else "MSE"
+    plot(
+      payload.q$error.path$iteration,
+      payload.q$error.path$value,
+      xlab = "iteration",
+      ylab = y.label,
+      type = "l",
+      lty = 1
+    )
+    if (!is.null(payload.q$m.opt)) {
+      abline(v = payload.q$m.opt[payload.q$q.index], lty = 2, col = 2, lwd = 2)
+    }
+    return(invisible(NULL))
   }
+
+  if (identical(panel, "rho.path")) {
+    smooth.path <- boostmtree.lowess(payload.q$rho.path$iteration, payload.q$rho.path$value, f = 0.5)
+    plot(
+      payload.q$rho.path$iteration,
+      payload.q$rho.path$value,
+      xlab = "iteration",
+      ylab = expression(rho),
+      type = "n"
+    )
+    lines(smooth.path)
+    if (!is.null(payload.q$m.opt)) {
+      abline(v = payload.q$m.opt[payload.q$q.index], lty = 2, col = 2, lwd = 2)
+    }
+    return(invisible(NULL))
+  }
+
+  if (identical(panel, "phi.path")) {
+    smooth.path <- boostmtree.lowess(payload.q$phi.path$iteration, payload.q$phi.path$value, f = 0.5)
+    plot(
+      payload.q$phi.path$iteration,
+      payload.q$phi.path$value,
+      xlab = "iteration",
+      ylab = expression(phi),
+      type = "n"
+    )
+    lines(smooth.path)
+    if (!is.null(payload.q$m.opt)) {
+      abline(v = payload.q$m.opt[payload.q$q.index], lty = 2, col = 2, lwd = 2)
+    }
+    return(invisible(NULL))
+  }
+
+  if (identical(panel, "lambda.path")) {
+    smooth.path <- boostmtree.lowess(payload.q$lambda.path$iteration, payload.q$lambda.path$value, f = 0.5)
+    plot(
+      payload.q$lambda.path$iteration,
+      payload.q$lambda.path$value,
+      xlab = "iteration",
+      ylab = expression(lambda),
+      type = "n"
+    )
+    lines(smooth.path)
+    if (!is.null(payload.q$m.opt)) {
+      abline(v = payload.q$m.opt[payload.q$q.index], lty = 2, col = 2, lwd = 2)
+    }
+    return(invisible(NULL))
+  }
+
+  if (identical(panel, "variable.importance")) {
+    barplot(payload.q$variable.importance, las = 2, ylab = "variable importance")
+    return(invisible(NULL))
+  }
+
+  plot.new()
+  title(panel)
+  invisible(NULL)
+}
+
+boostmtree.draw.single.plot <- function(payload.q, model, use.rmse = TRUE) {
+  panels <- character(0)
+
+  if (!is.null(payload.q$time.by.subject) && !is.null(payload.q$fitted.by.subject) && !isTRUE(model$univariate)) {
+    panels <- c(panels, "trajectory")
+  }
+
+  if (!is.null(payload.q$observed.by.subject) && !is.null(payload.q$fitted.by.subject)) {
+    if (!is.null(payload.q$error.path)) {
+      panels <- c(panels, "observed.vs.fitted")
+    } else {
+      panels <- c(panels, "residual", "observed.vs.fitted")
+    }
+  }
+
+  if (!is.null(payload.q$error.path)) {
+    panels <- c(panels, "error.path")
+  }
+
+  if (!is.null(payload.q$rho.path)) {
+    panels <- c(panels, "rho.path")
+  }
+  if (!is.null(payload.q$phi.path)) {
+    panels <- c(panels, "phi.path")
+  }
+  if (!is.null(payload.q$lambda.path)) {
+    panels <- c(panels, "lambda.path")
+  }
+  if (!is.null(payload.q$variable.importance)) {
+    panels <- c(panels, "variable.importance")
+  }
+
+  if (length(panels) == 0L) {
+    panels <- "trajectory"
+  }
+
+  old.par <- par(no.readonly = TRUE)
+  on.exit(par(old.par), add = TRUE)
+
+  n.panel <- length(panels)
+  if (n.panel == 1L) {
+    par(mfrow = c(1, 1))
+  } else if (n.panel == 2L) {
+    par(mfrow = c(1, 2))
+  } else {
+    par(mfrow = c(ceiling(n.panel / 2), 2))
+  }
+
+  for (panel in panels) {
+    boostmtree.draw.single.panel(
+      panel = panel,
+      model = model,
+      payload.q = payload.q,
+      use.rmse = use.rmse
+    )
+  }
+
+  if (!is.null(payload.q$q.label)) {
+    mtext(
+      side = 3,
+      line = -1.5,
+      outer = FALSE,
+      text = paste("response level:", payload.q$q.label)
+    )
+  }
+
+  invisible(NULL)
+}
+
+plot.boostmtree <- function(
+  x,
+  use.rmse = TRUE,
+  output = c("plot", "data", "pdf"),
+  file = NULL,
+  width = 10,
+  height = 10,
+  verbose = TRUE,
+  ...
+) {
+  output <- match.arg(output)
+  display <- boostmtree.resolve.display.object(x)
+  payload <- boostmtree.plot.payload(x, use.rmse = use.rmse)
+
+  if (identical(output, "data")) {
+    return(payload)
+  }
+
+  if (identical(output, "pdf")) {
+    if (is.null(file)) {
+      stop("`file` must be supplied when `output = \"pdf\"`.")
+    }
+    pdf(file = file, width = width, height = height)
+    on.exit(dev.off(), add = TRUE)
+  }
+
+  for (q in seq_along(payload)) {
+    boostmtree.draw.single.plot(
+      payload.q = payload[[q]],
+      model = display$model,
+      use.rmse = use.rmse
+    )
+  }
+
+  if (identical(output, "pdf") && isTRUE(verbose)) {
+    cat("Plot saved to:", file, "\n")
+  }
+
+  invisible(payload)
 }

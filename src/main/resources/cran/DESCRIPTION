@@ -3,9 +3,9 @@ Version: _PROJECT_VERSION_
 Date: _PROJECT_DSTAMP_
 Title: Boosted Multivariate Trees for Longitudinal Data
 Authors@R: c(person("Hemant", "Ishwaran", email = "hemant.ishwaran@gmail.com", role = "aut"),
-    person("Amol", "Pandeya", email = "amoljpande@gmail.com", role = c("aut")),
+    person("Amol", "Pande", email = "amoljpande@gmail.com", role = c("aut")),
     person("Udaya B.", "Kogalur", email = "ubk@kogalur.com", role = c("aut", "cre")))
-Author: Hemant Ishwaran [aut], Amol Pandeya [aut], Udaya B. Kogalur [aut, cre]
+Author: Hemant Ishwaran [aut], Amol Pande [aut], Udaya B. Kogalur [aut, cre]
 Maintainer: Udaya B. Kogalur <ubk@kogalur.com>
 Depends: R (>= 4.3.0)
 Imports: _RFSRC_PACKAGE_NAME_ (>= 3.5.0), parallel, splines, nlme

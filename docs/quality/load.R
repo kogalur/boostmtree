@@ -33,22 +33,30 @@ library("parallel")
 #  Source files, and load native code object.
 ###########################################################################
 
-source(paste(source.path, "boostmtree.R", sep=""))
-source(paste(source.path, "predict.boostmtree.R", sep=""))
-source(paste(source.path, "generic.predict.boostmtree.R", sep=""))
-source(paste(source.path, "partialPlot.R", sep=""))
-source(paste(source.path, "plot.boostmtree.R", sep=""))
-source(paste(source.path, "print.boostmtree.R", sep=""))
-source(paste(source.path, "utilities.R", sep=""))
-source(paste(source.path, "simLong.R", sep=""))
-source(paste(source.path, "vimp.boostmtree.R", sep=""))
-source(paste(source.path, "marginalPlot.R", sep=""))
-source(paste(source.path, "vimpPlot.R", sep=""))
-
+source(paste(source.path, "boostmtree_control.R", sep=""))
+source(paste(source.path, "boostmtree_display.R", sep=""))
+source(paste(source.path, "boostmtree_fit_tree.R", sep=""))
+source(paste(source.path, "boostmtree_math.R", sep=""))
+source(paste(source.path, "boostmtree_object.R", sep=""))
+source(paste(source.path, "boostmtree_preprocess.R", sep=""))
+source(paste(source.path, "boostmtree_response.R", sep=""))
 source(paste(source.path, "boostmtree.news.R", sep=""))
+source(paste(source.path, "boostmtree.R", sep=""))
+source(paste(source.path, "generic.predict.boostmtree.R", sep=""))
+source(paste(source.path, "marginal_plot.boostmtree.R", sep=""))
+source(paste(source.path, "partial_plot.boostmtree.R", sep=""))
+source(paste(source.path, "plot.boostmtree.R", sep=""))
+source(paste(source.path, "plot.vimp.boostmtree.R", sep=""))
+source(paste(source.path, "predict.boostmtree.R", sep=""))
+source(paste(source.path, "print.boostmtree.R", sep=""))
+source(paste(source.path, "simLong.R", sep=""))
+source(paste(source.path, "utilities.R", sep=""))
+source(paste(source.path, "vimp.boostmtree.R", sep=""))
 source(paste(source.path, "zzz.R", sep=""))
 
 cat("\n           Version:  _PROJECT_VERSION_ID_ ");
 cat("\n Development Build:  _PROJECT_BUILD_ID_ ");
 cat("\n      Architecture: _PROJECT_ARCH_TYPE_ ");
 cat("\n\n")
+
+

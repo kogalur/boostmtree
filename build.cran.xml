@@ -44,10 +44,7 @@
       <fileset dir="${ppscran}">
         <include name="NAMESPACE"/>
         <include name="DESCRIPTION"/>
-        <include name="configure.ac"/>
-        <include name="configure.win"/>
-        <include name="cleanup"/>
-        <include name="cleanup.win"/>
+        <include name="NEWS.md"/>
       </fileset>
 
       <filterchain>

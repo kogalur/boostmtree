@@ -14,6 +14,6 @@ boostmtree.news(...)
   None.
 }
 \author{
-  Hemant Ishwaran, Amol Pande  and Udaya B. Kogalur
+Amol Pande, Udaya B. Kogalur and Hemant Ishwaran
 }
 \keyword{documentation}
